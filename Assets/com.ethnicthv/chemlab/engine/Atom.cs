@@ -1,4 +1,6 @@
-﻿namespace com.ethnicthv.chemlab.engine
+﻿using System.Linq;
+
+namespace com.ethnicthv.chemlab.engine
 {
     public class Atom
     {
@@ -14,6 +16,12 @@
         public ElementProperty GetProperty()
         {
             return ElementProperty.GetElementProperty(Element);
+        }
+        
+        public int GetMaxConnectivity()
+        {
+            // return max Valence value
+            return GetProperty().Valences.Max() ;
         }
         
         public override string ToString()

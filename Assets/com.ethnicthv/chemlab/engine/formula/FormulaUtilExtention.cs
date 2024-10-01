@@ -4,27 +4,41 @@
     {
         public static Formula AddCarbonyl(this Formula formula)
         {
-            formula.AddAtom(new Atom(Element.Oxygen), Bond.BondType.Double);
-            return formula;
+            var origin = formula.GetCurrentAtom();
+            return formula
+                .AddAtom(new Atom(Element.Oxygen), Bond.BondType.Double)
+                .MoveToAtom(origin);
         }
 
         public static Formula AddHydroxyl(this Formula formula)
         {
-            formula.AddAtom(new Atom(Element.Oxygen));
-            return formula;
+            var origin = formula.GetCurrentAtom();
+            return formula
+                .AddAtom(new Atom(Element.Oxygen))
+                .AddAtom(new Atom(Element.Hydrogen))
+                .MoveToAtom(origin);
         }
 
         public static Formula AddAmine(this Formula formula)
         {
-            formula.AddAtom(new Atom(Element.Nitrogen));
-            return formula;
+            var origin = formula.GetCurrentAtom();
+            var mainNitrogen = new Atom(Element.Nitrogen);
+            return formula.AddAtom(mainNitrogen)
+                .AddAtom(new Atom(Element.Hydrogen))
+                .MoveToAtom(mainNitrogen)
+                .AddAtom(new Atom(Element.Hydrogen))
+                .MoveToAtom(origin);
         }
 
         public static Formula AddCarboxyl(this Formula formula)
         {
-            formula.AddAtom(new Atom(Element.Oxygen), Bond.BondType.Double);
-            formula.AddAtom(new Atom(Element.Oxygen));
-            return formula;
+            var origin = formula.GetCurrentAtom();
+            var mainCarbon = new Atom(Element.Carbon);
+            return formula
+                .AddAtom(mainCarbon)
+                .AddAtom(new Atom(Element.Oxygen), Bond.BondType.Double)
+                .MoveToAtom(mainCarbon)
+                .AddAtom(new Atom(Element.Oxygen, -1));
         }
     }
 }

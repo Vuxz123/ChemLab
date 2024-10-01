@@ -28,5 +28,14 @@ namespace com.ethnicthv.chemlab.engine.formula
             mutableStructure[srcAtom].Add(new Bond(srcAtom, dstAtom, bondType));
             mutableStructure[dstAtom].Add(new Bond(dstAtom, srcAtom, bondType));
         }
+        
+        public static int GetAvailableConnectivity(Atom atom, Dictionary<Atom, List<Bond>> structure)
+        {
+            if (!structure.ContainsKey(atom))
+            {
+                return atom.GetMaxConnectivity();
+            }
+            return atom.GetMaxConnectivity() - structure[atom].Count;
+        }
     }
 }

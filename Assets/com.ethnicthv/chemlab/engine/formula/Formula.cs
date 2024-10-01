@@ -12,9 +12,9 @@ namespace com.ethnicthv.chemlab.engine.formula
         private readonly List<Atom> _chargeAtoms;
         private Atom _startAtom;
         private float _mass;
-        
-        private List<FormulaRing> _rings;
-        
+
+        private readonly List<FormulaRing> _rings;
+
         public bool IsAromatic => _rings.Any(ring => ring.IsAromatic);
         public bool IsCyclic => _rings.Any();
 
@@ -43,7 +43,21 @@ namespace com.ethnicthv.chemlab.engine.formula
 
         public object Clone()
         {
-            return new Formula(new Dictionary<Atom, List<Bond>>(_structure), _startAtom);
+            var formula = new Formula();
+            foreach (var (key, value) in _structure)
+            {
+                formula._structure[key] = new List<Bond>(value);
+            }
+
+            formula._chargeAtoms.AddRange(_chargeAtoms);
+            formula._startAtom = _startAtom;
+            formula._mass = _mass;
+            return formula;
+        }
+        
+        public Atom GetCurrentAtom()
+        {
+            return _currentAtom;
         }
 
         #region Builder
@@ -61,7 +75,7 @@ namespace com.ethnicthv.chemlab.engine.formula
         {
             return CreateNewFormula(new Atom(Element.Carbon));
         }
-        
+
         public static Formula CreateNewChainCarbonFormula(int length)
         {
             var formula = CreateNewFormula(new Atom(Element.Carbon));
@@ -69,6 +83,20 @@ namespace com.ethnicthv.chemlab.engine.formula
             {
                 formula.AddAtom(new Atom(Element.Carbon));
             }
+
+            return formula;
+        }
+        
+        public static Formula CreateNewRingCarbonFormula(int size)
+        {
+            if (size < 3)
+            {
+                throw new Exception("Ring size must be greater than 2");
+            }
+
+            var formula = CreateNewFormula(new Atom(Element.Carbon));
+            var ring = new FormulaRing(size, formula);
+            formula._rings.Add(ring);
             return formula;
         }
 
@@ -84,6 +112,20 @@ namespace com.ethnicthv.chemlab.engine.formula
 
             return this;
         }
+        
+        public Formula AddStructure(Formula structure, Bond.BondType bondType = Bond.BondType.Single)
+        {
+            AddAtom(structure._startAtom, bondType);
+            foreach (var (key, value) in structure.GetStructure())
+            {
+                foreach (var bond in value)
+                {
+                    AddAtom(key, bond.GetBondType());
+                }
+            }
+
+            return this;
+        }
 
         public FormulaRing AddRing(int size, Atom ringStartAtom, Bond.BondType bondType = Bond.BondType.Single)
         {
@@ -91,6 +133,12 @@ namespace com.ethnicthv.chemlab.engine.formula
             var ring = new FormulaRing(size, this);
             _rings.Add(ring);
             return ring;
+        }
+        
+        public Formula MoveToAtom(Atom atom)
+        {
+            _currentAtom = atom;
+            return this;
         }
 
         #endregion
@@ -133,7 +181,7 @@ namespace com.ethnicthv.chemlab.engine.formula
             public bool IsAromatic { get; private set; }
 
             public bool IsUnstable => _numOfDoubleBond is 3 or 4 or > 8;
-            
+
             private readonly List<Bond> _ringBonds;
             private readonly List<Atom> _ringAtoms;
             private readonly Dictionary<int, Bond> _branches;
@@ -171,16 +219,23 @@ namespace com.ethnicthv.chemlab.engine.formula
 
                 return this;
             }
-            
-            public FormulaRing AddBranch(int position, Atom atom, Bond.BondType bondType = Bond.BondType.Single)
-            {
-                Formula.AddAtom(atom, bondType);
-                _branches.Add(position, Formula._structure[atom].First());
 
-                if (bondType == Bond.BondType.Double)
+            public FormulaRing AddBranch(int position, Formula sideBranch, Bond.BondType bondType = Bond.BondType.Single)
+            {
+                if (position < 0 || position >= Size)
                 {
-                    _numOfDoubleBond++;
+                    throw new Exception("Branch position is out of range");
                 }
+                if (_branches.ContainsKey(position))
+                {
+                    throw new Exception("Branch is already added");
+                }
+                
+                // Note: add sideBranch to formula
+                Formula.MoveToAtom(_ringAtoms[position]);
+                Formula.AddStructure(sideBranch, bondType);
+                
+                _branches.Add(position, Formula._structure[sideBranch._startAtom].First());
 
                 return this;
             }
@@ -207,6 +262,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                 {
                     throw new Exception("Ring is already formed");
                 }
+
                 if (Size != _ringAtoms.Count)
                 {
                     throw new Exception("Ring size is not match with ring structure");
@@ -221,7 +277,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                 }
 
                 // Note: check if ring is aromatic
-                if (_ringAtoms.Count == 6)
+                if (_ringAtoms.Count == 6 && _numOfDoubleBond == 3)
                 {
                     var tempBool = 0;
                     for (var i = 0; i < _ringAtoms.Count; i++)
@@ -258,6 +314,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                                 IsAromatic = false;
                                 break;
                         }
+
                         if (IsAromatic == false)
                         {
                             break;
@@ -287,6 +344,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                 {
                     throw new Exception("Ring is not formed yet");
                 }
+
                 return Formula;
             }
         }
