@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using com.ethnicthv.chemlab.engine.api.atom;
 
 namespace com.ethnicthv.chemlab.engine.api.formula
 {
-    public interface IFormula : ICloneable
+    public interface IFormula<A>: ICloneable, IFormulaAtomDataChecker<A>, IBondBreaker<A> where A : IAtom
     {
-        public IReadOnlyDictionary<Atom, IReadOnlyList<Bond>> GetStructure();
-        public IReadOnlyList<Atom> GetChargeAtom();
+        public IReadOnlyDictionary<A, IReadOnlyList<Bond>> GetStructure();
+        public IReadOnlyList<A> GetChargeAtom();
+        public IReadOnlyList<IFormulaRing<A>> GetRings();
         public float GetMass();
-        public Atom GetStartAtom();
+        public A GetStartAtom();
     }
 }
