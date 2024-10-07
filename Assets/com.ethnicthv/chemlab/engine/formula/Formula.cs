@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
-using com.ethnicthv.chemlab.engine.api.formula;
+using com.ethnicthv.chemlab.engine.api.molecule.formula;
 
 namespace com.ethnicthv.chemlab.engine.formula
 {
-    public class Formula : IFormula<Atom>
+    public class Formula : IFormula
     {
         private readonly Dictionary<Atom, List<Bond>> _structure;
 
@@ -74,7 +75,7 @@ namespace com.ethnicthv.chemlab.engine.formula
             return new Formula(structure, startAtom);
         }
 
-        private static Formula CreateNewFormula(Atom startAtom)
+        public static Formula CreateNewFormula(Atom startAtom)
         {
             return new Formula
             {
@@ -181,7 +182,7 @@ namespace com.ethnicthv.chemlab.engine.formula
             return new ReadOnlyCollection<Atom>(_chargeAtoms);
         }
 
-        public IReadOnlyList<IFormulaRing<Atom>> GetRings()
+        public IReadOnlyList<IFormulaRing> GetRings()
         {
             return _rings;
         }
@@ -237,7 +238,7 @@ namespace com.ethnicthv.chemlab.engine.formula
             _structure[destinationAtom].Remove(bond);
         }
 
-        public class FormulaRing : IFormulaRing<Atom>
+        public class FormulaRing : IFormulaRing
         {
             public readonly Formula Formula;
             public readonly int Size;
@@ -453,7 +454,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                 AddBranchC(position, sideBranch, bondType);
             }
 
-            public void AddBranch(int position, IFormula<Atom> sideBranch, Bond.BondType bondType = Bond.BondType.Single)
+            public void AddBranch(int position, IFormula sideBranch, Bond.BondType bondType = Bond.BondType.Single)
             {
                 if (sideBranch is Formula formula)
                 {

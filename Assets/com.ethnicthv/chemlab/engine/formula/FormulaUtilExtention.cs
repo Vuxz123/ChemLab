@@ -1,4 +1,5 @@
-﻿using com.ethnicthv.chemlab.engine.api.element;
+﻿using com.ethnicthv.chemlab.engine.api.atom;
+using com.ethnicthv.chemlab.engine.api.element;
 
 namespace com.ethnicthv.chemlab.engine.formula
 {

@@ -1,8 +1,7 @@
 ﻿using System.Linq;
-using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
 
-namespace com.ethnicthv.chemlab.engine
+namespace com.ethnicthv.chemlab.engine.api.atom
 {
     public class Atom : IAtom
     {

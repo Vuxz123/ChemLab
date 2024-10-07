@@ -2,6 +2,6 @@
 {
     public interface IContext
     {
-        
+        public T GetProperty<T>(IContextProperty<T> property);
     }
 }
