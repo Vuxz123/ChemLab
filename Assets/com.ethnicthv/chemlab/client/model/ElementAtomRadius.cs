@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using com.ethnicthv.chemlab.engine;
+using com.ethnicthv.chemlab.engine.api.element;
 using Unity.VisualScripting;
 
 namespace com.ethnicthv.chemlab.client.model

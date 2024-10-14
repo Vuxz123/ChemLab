@@ -1,24 +1,24 @@
 ﻿using com.ethnicthv.chemlab.client.api.model;
-using com.ethnicthv.chemlab.engine;
+using com.ethnicthv.chemlab.engine.api.atom;
 using UnityEngine;
 
 namespace com.ethnicthv.chemlab.client.model
 {
     public class GenericAtomModel : IAtomModel
     {
-        public const float ATOM_RADIUS = 0.5f;
+        private const float AtomRadius = 0.5f;
         
-        private Mesh _mesh;
-        private Vector3 _position;
-        private Quaternion _rotation;
-        private Atom _atom;
-        private float _radius;
+        private readonly Mesh _mesh;
+        public Vector3 Position;
+        public Quaternion Rotation;
+        private readonly Atom _atom;
+        private readonly float _radius;
         
         public GenericAtomModel(Mesh mesh, Vector3 position, Quaternion rotation, Atom atom, float radius)
         {
             _mesh = mesh;
-            _position = position;
-            _rotation = rotation;
+            Position = position;
+            Rotation = rotation;
             _atom = atom;
             _radius = radius;
         }
@@ -27,10 +27,10 @@ namespace com.ethnicthv.chemlab.client.model
         {
             // calculate radius based on element
             _atom = atom;
-            _radius = ElementAtomRadius.Radius.TryGetValue(atom.Element, out var radius) ? radius : ATOM_RADIUS;
+            _radius = ElementAtomRadius.Radius.TryGetValue(atom.GetElement(), out var radius) ? radius : AtomRadius;
             _mesh = GenerateMesh(atom, _radius);
-            _position = Vector3.zero;
-            _rotation = Quaternion.identity;
+            Position = Vector3.zero;
+            Rotation = Quaternion.identity;
         }
 
         public Mesh GetMesh()
@@ -40,12 +40,17 @@ namespace com.ethnicthv.chemlab.client.model
 
         public Vector3 GetPosition()
         {
-            return _position;
+            return Position;
         }
 
         public Quaternion GetRotation()
         {
-            return _rotation;
+            return Rotation;
+        }
+
+        public Matrix4x4 GetModelMatrix()
+        {
+            return Matrix4x4.TRS(Position, Rotation, Vector3.one);
         }
 
         public Atom GetAtom()

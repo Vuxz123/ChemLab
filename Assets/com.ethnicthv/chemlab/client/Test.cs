@@ -2,10 +2,13 @@
 using com.ethnicthv.chemlab.client.model;
 using com.ethnicthv.chemlab.client.render;
 using com.ethnicthv.chemlab.engine;
+using com.ethnicthv.chemlab.engine.api.atom;
+using com.ethnicthv.chemlab.engine.api.element;
 using UnityEngine;
 
 namespace com.ethnicthv.chemlab.client
 {
+    [ExecuteInEditMode]
     public class Test : MonoBehaviour
     {
         private GenericAtomModel _atomModel;
@@ -20,7 +23,7 @@ namespace com.ethnicthv.chemlab.client
         private void Start()
         {
             _camera = Camera.main;
-            Debug.Log(_atomModel.GetAtom().Element);
+            Debug.Log(_atomModel.GetAtom().GetElement());
         }
 
         private void Update()
@@ -30,7 +33,6 @@ namespace com.ethnicthv.chemlab.client
         }
         
         // This method is called every frame in editor mode
-        [ExecuteInEditMode]
         void OnDrawGizmos()
         {
             if (Application.isPlaying)
