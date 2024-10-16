@@ -1,4 +1,4 @@
-﻿using com.ethnicthv.chemlab.client.model;
+using com.ethnicthv.chemlab.client.model;
 using com.ethnicthv.chemlab.client.render;
 using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
@@ -19,6 +19,7 @@ namespace com.ethnicthv.chemlab.client
 
         private void Awake()
         {
+
 #if UNITY_EDITOR
             if (!Application.isPlaying)
             {
