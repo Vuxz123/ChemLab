@@ -1,4 +1,5 @@
 ﻿using System;
+using com.ethnicthv.chemlab.engine.api.atom;
 
 namespace com.ethnicthv.chemlab.engine
 {

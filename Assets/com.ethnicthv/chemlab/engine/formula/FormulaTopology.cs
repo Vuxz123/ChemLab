@@ -1,16 +1,24 @@
-﻿namespace com.ethnicthv.chemlab.engine.formula
+﻿using System.Collections.Generic;
+
+namespace com.ethnicthv.chemlab.engine.formula
 {
-    public class FormulaTopology
+    public delegate Formula FormulaFactory(Formula formula = null);
+    public abstract class FormulaTopology
     {
-        protected bool IsCyclic;
-        protected bool IsAromatic;
-        protected bool IsAliphatic;
-        protected bool IsBranching;
+        public string TopologyNamespace { get; }
+        public FormulaFactory Factory { get; }
+        public FormulaTopology(FormulaFactory factory, string topologyNamespace)
+        {
+            Factory = factory;
+            TopologyNamespace = topologyNamespace;
+            
+            RegisterTopology(this);
+        }
         
-        protected int BranchCount;
-        protected int RingCount;
-        protected int AromaticRingCount;
-        
-        
+        private static readonly Dictionary<string, FormulaTopology> Topologies = new();
+        public static void RegisterTopology(FormulaTopology formulaTopology)
+        {
+            Topologies[formulaTopology.TopologyNamespace] = formulaTopology;
+        }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Unity.VisualScripting;
 
-namespace com.ethnicthv.chemlab.engine
+namespace com.ethnicthv.chemlab.engine.molecule
 {
     public class Molecule
     {

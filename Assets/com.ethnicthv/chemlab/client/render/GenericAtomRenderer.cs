@@ -9,13 +9,12 @@ namespace com.ethnicthv.chemlab.client.render
         public void Render(IAtomModel atomModel, Camera camera)
         {
             var mesh = atomModel.GetMesh();
-            var position = atomModel.GetPosition();
-            var rotation = atomModel.GetRotation();
+            var matrix = atomModel.GetModelMatrix();
             
             Material material = new Material(Shader.Find("Standard"));
             
             // render mesh
-            Graphics.DrawMesh(mesh, position, rotation, material, 0, camera);
+            Graphics.DrawMesh(mesh, matrix, material, 0, camera);
         }
 
         public void RenderGizmos(IAtomModel renderable)
