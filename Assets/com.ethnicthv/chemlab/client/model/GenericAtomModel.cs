@@ -1,4 +1,5 @@
 ﻿using com.ethnicthv.chemlab.client.api.model;
+using com.ethnicthv.chemlab.client.model.util;
 using com.ethnicthv.chemlab.engine.api.atom;
 using UnityEngine;
 

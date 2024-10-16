@@ -2,9 +2,9 @@
 using System.Linq;
 using UnityEngine;
 
-namespace com.ethnicthv.chemlab.client.model
+namespace com.ethnicthv.chemlab.client.model.util
 {
-    public class SphereModelUtil
+    public static class SphereModelUtil
     {
         public static Mesh GenerateIcoSphereMesh(float radius)
         {
@@ -21,6 +21,9 @@ namespace com.ethnicthv.chemlab.client.model
 
             mesh.vertices = vertices.ToArray();
             mesh.triangles = triangles.SelectMany(t => new[] {t.Item1, t.Item2, t.Item3}).ToArray();
+            
+            mesh.RecalculateNormals();
+            mesh.OptimizeReorderVertexBuffer();
             return mesh;
         }
 

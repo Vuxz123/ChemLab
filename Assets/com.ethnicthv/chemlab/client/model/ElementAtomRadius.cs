@@ -7,7 +7,7 @@ namespace com.ethnicthv.chemlab.client.model
 {
     public static class ElementAtomRadius
     {
-        private static Dictionary<Element, float> _rawRadius = new Dictionary<Element, float>()
+        private static Dictionary<Element, float> _rawRadius = new()
         {
             {Element.Hydrogen, 0.21f},
             {Element.Helium, 0.31f},
