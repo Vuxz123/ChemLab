@@ -28,7 +28,7 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
         public override void Create()
         {
             _renderPass = new ChemicalCompoundRenderPass();
-            _renderPass.renderPassEvent = RenderPassEvent.AfterRenderingOpaques
+            _renderPass.renderPassEvent = RenderPassEvent.AfterRenderingOpaques;
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
