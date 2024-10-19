@@ -11,7 +11,7 @@ namespace com.ethnicthv.chemlab.client.model.util
             var mesh = new Mesh();
             var vertices = new List<Vector3>();
             var triangles = new List<(int, int, int)>();
-            
+
             CreateDefaultMesh(radius, vertices, triangles, out var triStack);
             
             while (triStack.TryPop(out var tri))
@@ -23,6 +23,8 @@ namespace com.ethnicthv.chemlab.client.model.util
             mesh.triangles = triangles.SelectMany(t => new[] {t.Item1, t.Item2, t.Item3}).ToArray();
             
             mesh.RecalculateNormals();
+            mesh.RecalculateTangents();
+            mesh.RecalculateBounds();
             mesh.OptimizeReorderVertexBuffer();
             return mesh;
         }

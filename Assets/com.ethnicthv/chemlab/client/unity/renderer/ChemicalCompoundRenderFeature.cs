@@ -1,7 +1,9 @@
-﻿using System.Drawing;
-using com.ethnicthv.chemlab.client.api.render;
+﻿using com.ethnicthv.chemlab.client.api.render;
+using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
+using Color = UnityEngine.Color;
 
 namespace com.ethnicthv.chemlab.client.unity.renderer
 {
@@ -9,20 +11,32 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
     {
         private class ChemicalCompoundRenderPass : ScriptableRenderPass
         {
-            public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+            private class PassData
             {
-                var cmd = new CommandBuffer();
-                
-                
+            }
 
-                context.ExecuteCommandBuffer(cmd);
-                cmd.Release();
+            public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
+            {
+                using var builder =
+                    renderGraph.AddRenderPass<PassData>("ChemicalCompoundRenderPass", out var passData);
+                builder.SetRenderFunc((PassData data, RenderGraphContext context) => ExecutePass(data, context));
+            }
 
-                var camera = renderingData.cameraData.camera;
-                
+            static void ExecutePass(PassData data, RenderGraphContext context)
+            {
+                // Clear the render target to black
+                context.cmd.ClearRenderTarget(true, true, Color.black);
+                if (RenderProgram.Instance == null)
+                {
+                    Debug.LogError("RenderProgram is null");
+                }
+                else
+                {
+                    RenderProgram.Instance.Render(context.cmd, context.renderContext);
+                }
             }
         }
-        
+
         private ChemicalCompoundRenderPass _renderPass;
 
         public override void Create()

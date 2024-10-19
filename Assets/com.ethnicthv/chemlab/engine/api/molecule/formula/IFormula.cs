@@ -11,5 +11,7 @@ namespace com.ethnicthv.chemlab.engine.api.molecule.formula
         public IReadOnlyList<IFormulaRing> GetRings();
         public float GetMass();
         public Atom GetStartAtom();
+        public List<Atom> GetAtoms();
+        public List<Bond> GetBonds();
     }
 }

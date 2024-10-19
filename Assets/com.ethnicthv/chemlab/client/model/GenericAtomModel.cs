@@ -8,35 +8,38 @@ namespace com.ethnicthv.chemlab.client.model
     public class GenericAtomModel : IAtomModel
     {
         private const float AtomRadius = 0.5f;
+
+        private static Mesh DefaultMesh;
         
-        private readonly Mesh _mesh;
         public Vector3 Position;
         public Quaternion Rotation;
         private readonly Atom _atom;
-        private readonly float _radius;
+        private readonly Vector3 _size;
         
-        public GenericAtomModel(Mesh mesh, Vector3 position, Quaternion rotation, Atom atom, float radius)
+        public GenericAtomModel(Vector3 position, Quaternion rotation, Atom atom, float radius)
         {
-            _mesh = mesh;
             Position = position;
             Rotation = rotation;
             _atom = atom;
-            _radius = radius;
+            _size = Vector3.one * radius * 2;
         }
 
         public GenericAtomModel(Atom atom)
         {
             // calculate radius based on element
             _atom = atom;
-            _radius = ElementAtomRadius.Radius.TryGetValue(atom.GetElement(), out var radius) ? radius : AtomRadius;
-            _mesh = GenerateMesh(atom, _radius);
+            _size = ElementAtomRadius.Radius.TryGetValue(atom.GetElement(), out var radius) ? Vector3.one *  radius * 2 : Vector3.one * AtomRadius * 2;
             Position = Vector3.zero;
             Rotation = Quaternion.identity;
         }
 
         public Mesh GetMesh()
         {
-            return _mesh;
+            if (DefaultMesh == null)
+            {
+                DefaultMesh = GenerateMesh();
+            }
+            return DefaultMesh;
         }
 
         public Vector3 GetPosition()
@@ -51,7 +54,7 @@ namespace com.ethnicthv.chemlab.client.model
 
         public Matrix4x4 GetModelMatrix()
         {
-            return Matrix4x4.TRS(Position, Rotation, Vector3.one);
+            return Matrix4x4.TRS(Position, Rotation, _size);
         }
 
         public Atom GetAtom()
@@ -59,14 +62,9 @@ namespace com.ethnicthv.chemlab.client.model
             return _atom;
         }
 
-        public float GetRadius()
+        private static Mesh GenerateMesh()
         {
-            return _radius;
-        }
-
-        private static Mesh GenerateMesh(Atom atom, float radius)
-        {
-            return SphereModelUtil.GenerateIcoSphereMesh(radius);
+            return SphereModelUtil.GenerateIcoSphereMesh(1);
         }
     }
 }

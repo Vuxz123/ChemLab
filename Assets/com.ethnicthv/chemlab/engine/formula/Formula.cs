@@ -197,6 +197,16 @@ namespace com.ethnicthv.chemlab.engine.formula
             return _startAtom;
         }
 
+        public List<Atom> GetAtoms()
+        {
+            return _structure.Keys.ToList();
+        }
+        
+        public List<Bond> GetBonds()
+        {
+            return _structure.Values.SelectMany(bonds => bonds).ToList();
+        }
+
         public FormulaAtomData CheckAtomData(Atom atom)
         {
             var element = atom.GetElement();
