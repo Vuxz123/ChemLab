@@ -47,7 +47,7 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
             }
         }
 
-        public void Render(CommandBuffer commandBuffer, ScriptableRenderContext context)
+        public void RenderCompound(CommandBuffer commandBuffer, ScriptableRenderContext context)
         {
             _compoundRenderer.Render(_compoundModel, commandBuffer, context);
         }

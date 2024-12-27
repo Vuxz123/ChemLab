@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using com.ethnicthv.chemlab.client.model.bond;
+using com.ethnicthv.chemlab.engine;
 using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.api.molecule.formula;
 using com.ethnicthv.chemlab.engine.formula;
@@ -19,7 +20,6 @@ namespace com.ethnicthv.chemlab.client.model
         public GenericCompoundModel(Formula formula, Vector3 offset)
         {
             _offset = offset;
-            SetupModel(formula);
         }
 
         public override Vector3 GetPosition()
@@ -36,7 +36,7 @@ namespace com.ethnicthv.chemlab.client.model
         {
             throw new System.NotImplementedException();
         }
-        
+
         public Dictionary<Element, List<GenericAtomModel>> GetAtoms()
         {
             return _atoms;
@@ -57,7 +57,7 @@ namespace com.ethnicthv.chemlab.client.model
             return _3Bonds;
         }
         
-        private void SetupModel(IFormula formula)
+        public void SetupModel(IFormula formula)
         {
             var atoms = formula.GetAtoms();
             foreach (var a in atoms)
