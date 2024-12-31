@@ -1,6 +1,6 @@
 using com.ethnicthv.chemlab.client.model;
 using com.ethnicthv.chemlab.client.model.bond;
-using com.ethnicthv.chemlab.client.render;
+using com.ethnicthv.chemlab.client.unity.renderer.render;
 using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
 using UnityEngine;

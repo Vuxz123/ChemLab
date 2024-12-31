@@ -17,26 +17,32 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                using var builder = renderGraph
-                    .AddRenderPass<PassData>("ChemicalCompoundRenderPass", out var passData);
-                builder.SetRenderFunc((PassData data, RenderGraphContext context) => ExecutePass(data, context));
+                using (var builder = renderGraph
+                           .AddRasterRenderPass<PassData>("ChemicalCompoundRenderPass", out var passData))
+                {
+                    if (RenderProgram.Instance != null)
+                    {
+                        RenderProgram.Instance.CheckModelMatrix();
+                    }
+                    
+                    var resourceData = frameData.Get<UniversalResourceData>();
+                    
+                    builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                    builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture);
+                    
+                    builder.AllowPassCulling(false);
+                    builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
+                }
             }
 
-            static void ExecutePass(PassData data, RenderGraphContext context)
+            static void ExecutePass(PassData data, RasterGraphContext context)
             {
                 // Clear the render target to black
                 context.cmd.ClearRenderTarget(true, true, Color.black);
-                if (RenderProgram.Instance == null)
-                {
-                    Debug.LogError("RenderProgram is null! Please make sure that the RenderProgram is created.");
-                }
-                else
-                {
-                    //Pass one, Recalculate the model matrix if needed
-                    
-                    //Pass two, Render
-                    RenderProgram.Instance.RenderCompound(context.cmd, context.renderContext);
-                }
+                
+                if (RenderProgram.Instance == null) return;
+                
+                RenderProgram.Instance.RenderCompound(context.cmd, context);
             }
         }
 
@@ -44,8 +50,11 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
 
         public override void Create()
         {
-            _renderPass = new ChemicalCompoundRenderPass();
-            _renderPass.renderPassEvent = RenderPassEvent.AfterRenderingOpaques;
+            Debug.Log("Creating ChemicalCompoundRenderFeature");
+            _renderPass = new ChemicalCompoundRenderPass
+            {
+                renderPassEvent = RenderPassEvent.AfterRenderingOpaques
+            };
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)

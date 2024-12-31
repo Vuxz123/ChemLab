@@ -1,15 +1,14 @@
 ﻿using com.ethnicthv.chemlab.client.api.render;
-using com.ethnicthv.chemlab.client.model;
 using com.ethnicthv.chemlab.client.model.bond;
-using com.ethnicthv.chemlab.client.unity.renderer;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 
-namespace com.ethnicthv.chemlab.client.render
+namespace com.ethnicthv.chemlab.client.unity.renderer.render
 {
     public class BondRenderer : IRenderer<SingleBondModel>
     {
-        public void Render(SingleBondModel renderable, CommandBuffer commandBuffer, ScriptableRenderContext context)
+        public void Render(SingleBondModel renderable, RasterCommandBuffer commandBuffer, RasterGraphContext context)
         {
             var mesh = renderable.GetMesh();
             var matrix = renderable.GetModelMatrix();
