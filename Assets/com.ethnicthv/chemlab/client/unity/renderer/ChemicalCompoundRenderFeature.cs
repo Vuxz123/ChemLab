@@ -37,9 +37,6 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
 
             static void ExecutePass(PassData data, RasterGraphContext context)
             {
-                // Clear the render target to black
-                context.cmd.ClearRenderTarget(true, true, Color.black);
-                
                 if (RenderProgram.Instance == null) return;
                 
                 RenderProgram.Instance.RenderCompound(context.cmd, context);
@@ -50,7 +47,6 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
 
         public override void Create()
         {
-            Debug.Log("Creating ChemicalCompoundRenderFeature");
             _renderPass = new ChemicalCompoundRenderPass
             {
                 renderPassEvent = RenderPassEvent.AfterRenderingOpaques

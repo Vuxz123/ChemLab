@@ -1,5 +1,6 @@
 ﻿using com.ethnicthv.chemlab.client.api.model;
 using com.ethnicthv.chemlab.client.model.util;
+using com.ethnicthv.chemlab.client.unity.renderer;
 using com.ethnicthv.chemlab.engine.api.atom;
 using UnityEngine;
 
@@ -15,6 +16,9 @@ namespace com.ethnicthv.chemlab.client.model
         public Quaternion Rotation;
         private readonly Atom _atom;
         private readonly Vector3 _size;
+        
+        public GenericAtomModel ParentAtom { get; set; } = null;
+        public int RingPosition { get; set; } = -1;
         
         public GenericAtomModel(Vector3 position, Quaternion rotation, Atom atom, float radius)
         {
@@ -35,11 +39,7 @@ namespace com.ethnicthv.chemlab.client.model
 
         public Mesh GetMesh()
         {
-            if (DefaultMesh == null)
-            {
-                DefaultMesh = GenerateMesh();
-            }
-            return DefaultMesh;
+            return RenderProgram.Instance.atomMesh;
         }
 
         public Vector3 GetPosition()
@@ -60,11 +60,6 @@ namespace com.ethnicthv.chemlab.client.model
         public Atom GetAtom()
         {
             return _atom;
-        }
-
-        private static Mesh GenerateMesh()
-        {
-            return SphereModelUtil.GenerateIcoSphereMesh(1);
         }
     }
 }

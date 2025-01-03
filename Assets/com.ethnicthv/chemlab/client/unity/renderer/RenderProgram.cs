@@ -13,17 +13,19 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
     public class RenderProgram : MonoBehaviour
     {
         public static RenderProgram Instance { get; private set; }
-        
-        private RenderStorage _renderStorage = new();
-        
+
+        private RenderProcesser _renderProcesser = new();
+
+        public Mesh atomMesh;
+
         public Material atomMaterial;
         public Material bondMaterial;
-        
+
         private BondRenderer _bondRenderer = new();
         private GenericAtomRenderer _atomRenderer = new();
-        
+
         private bool isDirty = false;
-        
+
         private void Awake()
         {
             if (Instance == null)
@@ -39,7 +41,18 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
 
         private void Start()
         {
-            var formula = Formula.CreateNewCarbonFormula().AddAtom(new Atom(Element.Oxygen), Bond.BondType.Double);
+            var formula = Formula.CreateNewCarbonFormula().AddAtom(new Atom(Element.Carbon));
+            var start = formula.GetStartAtom();
+            formula.MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
+                .MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
+                .MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
+                .AddAtom(new Atom(Element.Carbon))
+                .AddAtom(new Atom(Element.Carbon));
+            start = formula.GetCurrentAtom();
+            formula.MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
+                .MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
+                .MoveToAtom(start).AddAtom(new Atom(Element.Carbon));
+            
             RegisterRenderEntity(formula, Vector3.zero);
         }
 
@@ -53,25 +66,23 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
 
         public void RegisterRenderEntity(Formula formula, Vector3 offset)
         {
-            _renderStorage.AddFormula(formula, offset);
+            _renderProcesser.AddFormula(formula, offset);
             isDirty = true;
         }
 
-        public void RenderCompound(RasterCommandBuffer commandBuffer, RasterGraphContext context) 
+        public void RenderCompound(RasterCommandBuffer commandBuffer, RasterGraphContext context)
         {
-            _renderStorage.ForeachElement((element, renderable) =>
+            _renderProcesser.ForeachElement((element, renderable) =>
             {
-                Debug.Log($"Rendering element {element}");
                 _atomRenderer.Render(renderable, commandBuffer, context);
             });
-            
         }
 
         public void CheckModelMatrix()
         {
             if (!isDirty) return;
-            _renderStorage.Refresh();
-            _renderStorage.Recalculate();
+            _renderProcesser.Refresh();
+            _renderProcesser.Recalculate();
             isDirty = false;
         }
     }

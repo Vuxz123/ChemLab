@@ -224,7 +224,7 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 34
-  orthographic: 1
+  orthographic: 0
   orthographic size: 5
   m_Depth: -1
   m_CullingMask:
@@ -397,6 +397,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0076afda4d9419eae99a802ed53060a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  atomMesh: {fileID: 4300000, guid: f2575b89882e71f4dad683651e51374b, type: 2}
   atomMaterial: {fileID: 2100000, guid: 25b65f22859d4304abff5a4852a527be, type: 2}
   bondMaterial: {fileID: 2100000, guid: 25b65f22859d4304abff5a4852a527be, type: 2}
 --- !u!1660057539 &9223372036854775807

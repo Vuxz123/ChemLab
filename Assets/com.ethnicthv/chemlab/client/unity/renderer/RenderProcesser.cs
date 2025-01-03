@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using com.ethnicthv.chemlab.client.model;
 using com.ethnicthv.chemlab.client.model.bond;
+using com.ethnicthv.chemlab.client.model.position;
 using com.ethnicthv.chemlab.client.unity.renderer.type;
 using com.ethnicthv.chemlab.engine;
 using com.ethnicthv.chemlab.engine.api.atom;
@@ -11,8 +12,10 @@ using UnityEngine;
 namespace com.ethnicthv.chemlab.client.unity.renderer
 {
     public delegate void ForeachElementDelegate(Element element, RenderAtomRenderable renderable);
-    public class RenderStorage
+    public class RenderProcesser
     {
+        private PositionCalculator _calculator = new();
+        
         private readonly LinkedList<(IFormula, Vector3)> _storageFormulas = new();
 
         private readonly Dictionary<Element, List<GenericAtomModel>> _atoms = new();
@@ -67,22 +70,21 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
 
         public void Recalculate()
         {
+            
             foreach (var temp in _storageFormulas)
             {
                 var (formula, offset) = temp;
                 var structure = formula.GetStructure();
-                var atomsQueue = new Queue<Atom>();
+                var atomsQueue = new Queue<(Atom, GenericAtomModel)>();
                 var atomsVisited = new HashSet<Atom>();
+                
+                atomsQueue.Enqueue((formula.GetStartAtom(), null));
 
-                foreach (var atom in structure.Keys)
+                while (atomsQueue.TryDequeue(out var value))
                 {
-                    atomsQueue.Enqueue(atom);
-                }
-
-                while (atomsQueue.Count > 0)
-                {
+                    var (atom, prevAtomModel) = value;
+                    
                     //Note: Check for visited atoms
-                    var atom = atomsQueue.Dequeue();
                     if (atomsVisited.Contains(atom))
                     {
                         continue;
@@ -92,6 +94,8 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
 
                     //Note: Main logic
                     var atomModel = new GenericAtomModel(atom);
+                    atomModel.ParentAtom = prevAtomModel;
+                    
                     if (!_atoms.ContainsKey(atom.GetElement()))
                     {
                         _atoms[atom.GetElement()] = new List<GenericAtomModel>();
@@ -103,6 +107,8 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
                     {
                         //Note: if destination atom is visited, skip
                         if (atomsVisited.Contains(bond.GetDestinationAtom())) continue;
+                        
+                        atomsQueue.Enqueue((bond.GetDestinationAtom(), atomModel));
 
                         //Note: else add the bond
                         if (bond.GetBondType() == Bond.BondType.Single)
@@ -118,6 +124,16 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
                             _3Bonds.Add(new TripleBondModel(2));
                         }
                     }
+                    
+                    //Note: skip first atom
+                    if (prevAtomModel == null)
+                    {
+                        continue;
+                    }
+                    
+                    //Note: calculate atom position
+                    atomModel.Position = prevAtomModel.Position + _calculator.GetCurrentPosition(formula, atom, prevAtomModel) * 2;
+                    Debug.Log("Atom position: " + atomModel.Position);
                 }
             }
         }

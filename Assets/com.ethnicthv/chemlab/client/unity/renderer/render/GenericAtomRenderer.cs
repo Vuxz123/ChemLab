@@ -19,8 +19,6 @@ namespace com.ethnicthv.chemlab.client.unity.renderer.render
             {
                 matrices[i] = atoms[i].GetModelMatrix();
             }
-            Debug.Log(atoms[0].GetMesh());
-            Debug.Log(matrices[0]);
             
             commandBuffer.DrawMeshInstanced(atoms[0].GetMesh(), 0, RenderProgram.Instance.atomMaterial, -1, matrices);
         }
