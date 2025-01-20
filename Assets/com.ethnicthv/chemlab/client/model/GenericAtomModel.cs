@@ -25,16 +25,16 @@ namespace com.ethnicthv.chemlab.client.model
             Position = position;
             Rotation = rotation;
             _atom = atom;
-            _size = Vector3.one * radius * 2;
+            _size = Vector3.one * radius;
         }
 
         public GenericAtomModel(Atom atom)
         {
             // calculate radius based on element
-            _atom = atom;
-            _size = ElementAtomRadius.Radius.TryGetValue(atom.GetElement(), out var radius) ? Vector3.one *  radius * 2 : Vector3.one * AtomRadius * 2;
             Position = Vector3.zero;
             Rotation = Quaternion.identity;
+            _atom = atom;
+            _size = ElementAtomRadius.Radius.TryGetValue(atom.GetElement(), out var radius) ? Vector3.one *  radius : Vector3.one * AtomRadius * 2;
         }
 
         public Vector3 GetPosition()

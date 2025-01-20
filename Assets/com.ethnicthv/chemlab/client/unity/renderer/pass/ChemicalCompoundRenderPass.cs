@@ -95,7 +95,7 @@ namespace com.ethnicthv.chemlab.client.unity.renderer.pass
 
             if (data.BondMaterial != null && data.OneBondMesh != null && data.TwoBondMesh != null && data.ThreeBondMesh != null)
             {
-                Debug.Log("Drawing bonds : one = " + data.MatricesStack1.Count + ", two = " + data.MatricesStack2.Count + ", three = " + data.MatricesStack3.Count + ".");
+                // Debug.Log("Drawing bonds : one = " + data.MatricesStack1.Count + ", two = " + data.MatricesStack2.Count + ", three = " + data.MatricesStack3.Count + ".");
                 cmd.DrawMeshInstanced(data.OneBondMesh, 0, data.BondMaterial, 0, data.MatricesStack1.ToArray());
                 cmd.DrawMeshInstanced(data.TwoBondMesh, 0, data.BondMaterial, 0, data.MatricesStack2.ToArray());
                 cmd.DrawMeshInstanced(data.ThreeBondMesh, 0, data.BondMaterial, 0, data.MatricesStack3.ToArray());

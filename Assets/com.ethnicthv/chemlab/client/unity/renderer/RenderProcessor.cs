@@ -146,12 +146,17 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
                     }
                     
                     //Note: calculate atom position
-                    
                     var curARadius = ElementAtomRadius.Radius[atom.GetElement()];
                     var prevARadius = ElementAtomRadius.Radius[prevAtomModel.GetAtom().GetElement()];
-                    var distance = prevARadius + curARadius + 3;
+                    var distance = prevARadius + curARadius + 1;
+                    Debug.Log("Distance: " + distance);
                     
-                    atomModel.Position = prevAtomModel.Position + _calculator.GetCurrentPosition(formula, atom, prevAtomModel) * distance;
+                    var dirVec = _calculator.GetCurrentPosition(formula, atom, prevAtomModel);
+                    
+                    Debug.Log("DirVec: " + dirVec + " - " + dirVec.magnitude);
+                    Debug.Log("Post Mult: " + dirVec * distance + " - " + (dirVec * distance).magnitude);
+                    
+                    atomModel.Position = prevAtomModel.Position + dirVec * distance;
                     //Note: add offset
                     atomModel.Position += offset;
                 }
