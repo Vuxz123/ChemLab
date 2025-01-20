@@ -5,6 +5,7 @@ namespace com.ethnicthv.chemlab.client.model.bond
 {
     public abstract class BondModel : IModel
     {
+        public static float BondRadius = 0.1f;
         public Vector3 Position;
         public Quaternion Rotation;
         protected readonly float Length;
@@ -30,7 +31,7 @@ namespace com.ethnicthv.chemlab.client.model.bond
 
         public Matrix4x4 GetModelMatrix()
         {
-            return Matrix4x4.TRS(Position, Rotation, Vector3.one);
+            return Matrix4x4.TRS(Position, Rotation, new Vector3(BondRadius, Length, BondRadius));
         }
     }
 }

@@ -6,12 +6,14 @@ namespace com.ethnicthv.chemlab.engine.api.molecule.formula
 {
     public interface IFormula: ICloneable, IFormulaAtomDataChecker, IBondBreaker
     {
+        public Dictionary<Atom, List<Bond>> CloneStructure();
         public IReadOnlyDictionary<Atom, IReadOnlyList<Bond>> GetStructure();
         public IReadOnlyList<Atom> GetChargeAtom();
         public IReadOnlyList<IFormulaRing> GetRings();
         public float GetMass();
         public Atom GetStartAtom();
-        public List<Atom> GetAtoms();
-        public List<Bond> GetBonds();
+        public IReadOnlyList<Atom> GetAtoms();
+        public IReadOnlyList<Bond> GetBonds();
+        public IReadOnlyList<Bond> GetAtomBonds(Atom atom);
     }
 }

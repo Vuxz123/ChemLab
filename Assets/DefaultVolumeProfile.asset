@@ -350,6 +350,28 @@ MonoBehaviour:
   balance:
     m_OverrideState: 1
     m_Value: 0
+--- !u!114 &-3586549043728026253
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc7873babbe4492c896169baf63b91ae, type: 3}
+  m_Name: ChemicalCompoundVolume
+  m_EditorClassIdentifier: 
+  active: 1
+  atomMaterial: {fileID: 0}
+  bondMaterial: {fileID: 0}
+  atomMesh: {fileID: 0}
+  oneBondMesh: {fileID: 0}
+  twoBondMesh: {fileID: 0}
+  threeBondMesh: {fileID: 0}
+  bondRadius:
+    m_OverrideState: 1
+    m_Value: 0.1
 --- !u!114 &-1454300172113318216
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -503,6 +525,7 @@ MonoBehaviour:
   - {fileID: -8480742710729562722}
   - {fileID: -4161192584465705689}
   - {fileID: -545506405823546385}
+  - {fileID: -3586549043728026253}
 --- !u!114 &497417319708984403
 MonoBehaviour:
   m_ObjectHideFlags: 3

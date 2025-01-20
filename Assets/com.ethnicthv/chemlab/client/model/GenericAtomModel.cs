@@ -17,7 +17,7 @@ namespace com.ethnicthv.chemlab.client.model
         private readonly Atom _atom;
         private readonly Vector3 _size;
         
-        public GenericAtomModel ParentAtom { get; set; } = null;
+        public GenericAtomModel ParentAtom { get; set; }
         public int RingPosition { get; set; } = -1;
         
         public GenericAtomModel(Vector3 position, Quaternion rotation, Atom atom, float radius)
@@ -35,11 +35,6 @@ namespace com.ethnicthv.chemlab.client.model
             _size = ElementAtomRadius.Radius.TryGetValue(atom.GetElement(), out var radius) ? Vector3.one *  radius * 2 : Vector3.one * AtomRadius * 2;
             Position = Vector3.zero;
             Rotation = Quaternion.identity;
-        }
-
-        public Mesh GetMesh()
-        {
-            return RenderProgram.Instance.atomMesh;
         }
 
         public Vector3 GetPosition()

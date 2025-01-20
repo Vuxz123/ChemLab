@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace com.ethnicthv.chemlab.client.model.util
@@ -13,9 +14,10 @@ namespace com.ethnicthv.chemlab.client.model.util
         public static Mesh GenerateSingleBond(float radius, float length)
         {
             var mesh = new Mesh();
-            var (vertices, indices) = GenerateCylinder(radius, length, 4);
+            var (vertices, indices) = GenerateCylinder(radius, length, 16);
             mesh.vertices = vertices.ToArray();
             mesh.triangles = indices.ToArray();
+            
             mesh.RecalculateNormals();
             mesh.RecalculateTangents();
             mesh.RecalculateBounds();
@@ -26,13 +28,13 @@ namespace com.ethnicthv.chemlab.client.model.util
         public static Mesh GenerateDoubleBond(float radius, float length)
         {
             var mesh = new Mesh();
-            var (vertices1, indices1) = GenerateCylinder(radius, length, 4);
-            var (vertices2, indices2) = GenerateCylinder(radius, length, 4);
+            var (vertices1, indices1) = GenerateCylinder(radius, length, 16);
+            var (vertices2, indices2) = GenerateCylinder(radius, length, 16);
 
             var vertices = new List<Vector3>();
             var indices = new List<int>();
 
-            var offset = new Vector3(0, radius, 0);
+            var offset = new Vector3(radius*1.5f, 0, 0);
 
             // offset the second cylinder
             for (var i = 0; i < vertices2.Count; i++)
@@ -42,7 +44,7 @@ namespace com.ethnicthv.chemlab.client.model.util
 
             for (var i = 0; i < vertices1.Count; i++)
             {
-                vertices2[i] -= offset;
+                vertices1[i] -= offset;
             }
 
             for (var i = 0; i < indices2.Count; i++)
@@ -69,14 +71,14 @@ namespace com.ethnicthv.chemlab.client.model.util
         public static Mesh GenerateTripleBond(float radius, float length)
         {
             var mesh = new Mesh();
-            var (vertices1, indices1) = GenerateCylinder(radius, length, 4);
-            var (vertices2, indices2) = GenerateCylinder(radius, length, 4);
-            var (vertices3, indices3) = GenerateCylinder(radius, length, 4);
+            var (vertices1, indices1) = GenerateCylinder(radius, length, 16);
+            var (vertices2, indices2) = GenerateCylinder(radius, length, 16);
+            var (vertices3, indices3) = GenerateCylinder(radius, length, 16);
 
             var vertices = new List<Vector3>();
             var indices = new List<int>();
 
-            var offset = new Vector3(0, radius, 0);
+            var offset = new Vector3(radius * 2.25f, 0, 0);
 
             // offset the second cylinder
             for (var i = 0; i < vertices2.Count; i++)
@@ -137,12 +139,12 @@ namespace com.ethnicthv.chemlab.client.model.util
                 var i2 = (i * 2 + 1) % (nbSides * 2);
                 var i3 = (i * 2 + 3) % (nbSides * 2);
                 var i4 = (i * 2 + 2) % (nbSides * 2);
-                indices.Add(i1);
+                indices.Add(i3);
                 indices.Add(i2);
+                indices.Add(i1);
+                indices.Add(i4);
                 indices.Add(i3);
                 indices.Add(i1);
-                indices.Add(i3);
-                indices.Add(i4);
             }
 
             return (vertices, indices);

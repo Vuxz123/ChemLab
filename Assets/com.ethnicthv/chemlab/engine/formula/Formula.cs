@@ -8,8 +8,10 @@ using com.ethnicthv.chemlab.engine.api.molecule.formula;
 
 namespace com.ethnicthv.chemlab.engine.formula
 {
+    
     public class Formula : IFormula
     {
+        
         private readonly Dictionary<Atom, List<Bond>> _structure;
 
         // <-- mutate by adding Atom to the structure -->
@@ -171,6 +173,18 @@ namespace com.ethnicthv.chemlab.engine.formula
         #endregion
 
         #region Formula Implementation
+        
+        public Dictionary<Atom, List<Bond>> CloneStructure()
+        {
+            var newStructure = new Dictionary<Atom, List<Bond>>();
+            foreach (var temp in _structure)
+            {
+                var (atom, bonds) = temp;
+                newStructure[atom] = new List<Bond>(bonds);
+            }
+
+            return newStructure;
+        }
 
         public IReadOnlyDictionary<Atom, IReadOnlyList<Bond>> GetStructure()
         {
@@ -203,14 +217,19 @@ namespace com.ethnicthv.chemlab.engine.formula
             return _startAtom;
         }
 
-        public List<Atom> GetAtoms()
+        public IReadOnlyList<Atom> GetAtoms()
         {
             return _structure.Keys.ToList();
         }
 
-        public List<Bond> GetBonds()
+        public IReadOnlyList<Bond> GetBonds()
         {
             return _structure.Values.SelectMany(bonds => bonds).ToList();
+        }
+        
+        public IReadOnlyList<Bond> GetAtomBonds(Atom atom)
+        {
+            return _structure[atom];
         }
 
         public FormulaAtomData CheckAtomData(Atom atom)
@@ -240,17 +259,22 @@ namespace com.ethnicthv.chemlab.engine.formula
         {
             var atom1Data = CheckAtomData(atom1);
             var atom2Data = CheckAtomData(atom2);
-            if (!atom1Data.InRing && !atom2Data.InRing)
+            switch (atom1Data.InRing)
             {
-                var bond = _structure[atom1].First(b => b.GetDestinationAtom() == atom2);
-                BreakBondNonCheckRing(bond);
-            }
-
-            if (atom1Data.InRing && atom2Data.InRing)
-            {
-                foreach (var ring in _rings)
+                case false when !atom2Data.InRing:
                 {
-                    ring.BreakBond(atom1, atom2);
+                    var bond = _structure[atom1].First(b => b.GetDestinationAtom() == atom2);
+                    BreakBondNonCheckRing(bond);
+                    break;
+                }
+                case true when atom2Data.InRing:
+                {
+                    foreach (var ring in _rings)
+                    {
+                        ring.BreakBond(atom1, atom2);
+                    }
+
+                    break;
                 }
             }
         }
@@ -355,7 +379,7 @@ namespace com.ethnicthv.chemlab.engine.formula
 
                 return this;
             }
-
+            
             /// <summary>
             /// A method to form the ring.
             /// This method will create a ring for the formula.

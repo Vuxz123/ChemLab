@@ -1,61 +1,68 @@
-﻿using com.ethnicthv.chemlab.client.api.render;
+﻿using UnityEngine.Rendering.Universal;
+using com.ethnicthv.chemlab.client.unity.renderer.pass;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.Universal;
-using Color = UnityEngine.Color;
 
 namespace com.ethnicthv.chemlab.client.unity.renderer
 {
     public class ChemicalCompoundRenderFeature : ScriptableRendererFeature
     {
-        private class ChemicalCompoundRenderPass : ScriptableRenderPass
-        {
-            private class PassData
-            {
-            }
+        public Material outlineShader;
+        public Material atomMaterial;
+        public Material bondMaterial;
 
-            public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
-            {
-                using (var builder = renderGraph
-                           .AddRasterRenderPass<PassData>("ChemicalCompoundRenderPass", out var passData))
-                {
-                    if (RenderProgram.Instance != null)
-                    {
-                        RenderProgram.Instance.CheckModelMatrix();
-                    }
-                    
-                    var resourceData = frameData.Get<UniversalResourceData>();
-                    
-                    builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
-                    builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture);
-                    
-                    builder.AllowPassCulling(false);
-                    builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
-                }
-            }
+        [Space(10)] public Mesh atomMesh;
+        public Mesh oneBondMesh;
+        public Mesh twoBondMesh;
+        public Mesh threeBondMesh;
 
-            static void ExecutePass(PassData data, RasterGraphContext context)
-            {
-                if (RenderProgram.Instance == null) return;
-                
-                RenderProgram.Instance.RenderCompound(context.cmd, context);
-            }
-        }
-
+        private ChemicalCompoundPrePass _prePass;
+        private ChemicalCompoundDepthPass _depthPass;
+        private ChemicalCompoundNormalPass _normalPass;
         private ChemicalCompoundRenderPass _renderPass;
+        private ChemicalCompoundOutlinePass _outlinePass;
 
         public override void Create()
         {
-            _renderPass = new ChemicalCompoundRenderPass
+            _prePass = new ChemicalCompoundPrePass
+            {
+                renderPassEvent = RenderPassEvent.BeforeRenderingPrePasses
+            };
+            
+            _depthPass = new ChemicalCompoundDepthPass(
+                atomMaterial, atomMesh
+            )
+            {
+                renderPassEvent = RenderPassEvent.AfterRenderingPrePasses
+            };
+            
+            _normalPass = new ChemicalCompoundNormalPass(
+                atomMaterial, atomMesh
+            )
+            {
+                renderPassEvent = RenderPassEvent.AfterRenderingPrePasses
+            };
+            
+            _renderPass = new ChemicalCompoundRenderPass(
+                atomMaterial, bondMaterial, atomMesh, oneBondMesh, twoBondMesh, threeBondMesh
+            )
             {
                 renderPassEvent = RenderPassEvent.AfterRenderingOpaques
+            };
+            
+            _outlinePass = new ChemicalCompoundOutlinePass
+            {
+                OutlineShader = outlineShader,
+                renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing
             };
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            renderer.EnqueuePass(_prePass);
+            renderer.EnqueuePass(_depthPass);
+            renderer.EnqueuePass(_normalPass);
             renderer.EnqueuePass(_renderPass);
+            renderer.EnqueuePass(_outlinePass);
         }
     }
 }

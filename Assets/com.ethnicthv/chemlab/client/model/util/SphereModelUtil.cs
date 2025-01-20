@@ -55,14 +55,14 @@ namespace com.ethnicthv.chemlab.client.model.util
             vertices.Add(v4 * radius);
             vertices.Add(v5 * radius);
             
-            AddTriangle(0, 1, 2, triangles, triStack, 0);
-            AddTriangle(0, 2, 4, triangles, triStack, 0);
-            AddTriangle(0, 4, 3, triangles, triStack, 0);
-            AddTriangle(0, 3, 1, triangles, triStack, 0);
-            AddTriangle(5, 1, 3, triangles, triStack, 0);
-            AddTriangle(5, 3, 4, triangles, triStack, 0);
-            AddTriangle(5, 4, 2, triangles, triStack, 0);
-            AddTriangle(5, 2, 1, triangles, triStack, 0);
+            AddTriangle(2, 1, 0, triangles, triStack, 0);
+            AddTriangle(4, 2, 0, triangles, triStack, 0);
+            AddTriangle(3, 4, 0, triangles, triStack, 0);
+            AddTriangle(1, 3, 0, triangles, triStack, 0);
+            AddTriangle(3, 1, 5, triangles, triStack, 0);
+            AddTriangle(4, 3, 5, triangles, triStack, 0);
+            AddTriangle(2, 4, 5, triangles, triStack, 0);
+            AddTriangle(1, 2, 5, triangles, triStack, 0);
 
             // regular pyramid shape
             // var v0 = new Vector3(radius, radius, radius);

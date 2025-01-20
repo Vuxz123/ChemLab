@@ -14,10 +14,6 @@ namespace com.ethnicthv.chemlab.client.model.bond
 
         public SingleBondModel(float length) : base(Vector3.zero, Quaternion.identity, length)
         {
-            if (_mesh == null)
-            {
-                _mesh = GenerateMesh(length);
-            }
         }
 
         public override Mesh GetMesh()
