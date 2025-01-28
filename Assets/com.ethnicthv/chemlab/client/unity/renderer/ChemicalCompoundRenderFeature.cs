@@ -9,6 +9,11 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
         public Material outlineShader;
         public Material atomMaterial;
         public Material bondMaterial;
+        
+        [Space]
+        public Color singleBondColor = Color.black;
+        public Color doubleBondColor = Color.yellow;
+        public Color tripleBondColor = Color.red;
 
         [Space(10)] public Mesh atomMesh;
         public Mesh oneBondMesh;
@@ -43,7 +48,9 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
             };
             
             _renderPass = new ChemicalCompoundRenderPass(
-                atomMaterial, bondMaterial, atomMesh, oneBondMesh, twoBondMesh, threeBondMesh
+                atomMaterial, bondMaterial, 
+                singleBondColor, doubleBondColor, tripleBondColor,
+                atomMesh, oneBondMesh, twoBondMesh, threeBondMesh
             )
             {
                 renderPassEvent = RenderPassEvent.AfterRenderingOpaques

@@ -35,9 +35,9 @@ Shader "Unlit/Atom"
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_START(PerUnitData)
                 UNITY_DEFINE_INSTANCED_PROP(float4, _Color)
-            UNITY_INSTANCING_BUFFER_END(Props)
+            UNITY_INSTANCING_BUFFER_END(PerUnitData)
 
             v2f vert(appdata v)
             {
@@ -53,7 +53,7 @@ Shader "Unlit/Atom"
             fixed4 frag(v2f i) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(i);
-                fixed4 col = UNITY_ACCESS_INSTANCED_PROP(Props, _Color);
+                fixed4 col = UNITY_ACCESS_INSTANCED_PROP(PerUnitData, _Color) * i.positionCS.z;
                 return col;
             }
             ENDCG

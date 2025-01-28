@@ -1,16 +1,17 @@
 ﻿using System.Collections.Generic;
-using com.ethnicthv.chemlab.client.model;
+using System.Runtime.InteropServices;
 using com.ethnicthv.chemlab.client.unity.renderer.render;
-using com.ethnicthv.chemlab.engine;
-using com.ethnicthv.chemlab.engine.api.atom;
-using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.formula;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.RenderGraphModule;
 
 namespace com.ethnicthv.chemlab.client.unity.renderer
 {
+    public struct AtomRenderData
+    {
+        public float4 Color;
+    }
     
     [ExecuteInEditMode]
     public class RenderProgram : MonoBehaviour
@@ -18,12 +19,16 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
         // <-- program properties -->
         public static RenderProgram Instance { get; private set; }
 
-        private RenderProcessor _renderProcessor = new();
+        private readonly RenderProcessor _renderProcessor = new();
+        private readonly AtomColorAssigner _colorAssigner = new();
+        
+        private NativeArray<AtomRenderData> _atomRenderData;
+        private GraphicsBuffer _atomRenderDataBuffer;
         // <-- end of program properties -->
 
         // <-- renderers -->
-        private BondRenderer _bondRenderer = new();
-        private GenericAtomRenderer _atomRenderer = new();
+        private readonly BondRenderer _bondRenderer = new();
+        private readonly GenericAtomRenderer _atomRenderer = new();
         // <-- end of renderers -->
 
         // <-- state -->
@@ -48,25 +53,9 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
             }
         }
         
-        private void Start()
-        {
-            Debug.Log("RenderProgram Start");
-            // var formula = Formula.CreateNewCarbonFormula().AddAtom(new Atom(Element.Carbon));
-            // var start = formula.GetStartAtom();
-            // formula.MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
-            //     .MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
-            //     .MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
-            //     .AddAtom(new Atom(Element.Carbon))
-            //     .AddAtom(new Atom(Element.Carbon));
-            // start = formula.GetCurrentAtom();
-            // formula.MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
-            //     .MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
-            //     .MoveToAtom(start).AddAtom(new Atom(Element.Carbon));
-
-            var formula = Formula.CreateNewFormula(new Atom(Element.Chlorine)).AddAtom(new Atom(Element.Hydrogen));
-            
-            RegisterRenderEntity(formula, Vector3.zero);
-        }
+        // private void Start()
+        // {
+        // }
 
         private void OnDestroy()
         {
@@ -74,6 +63,25 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
             {
                 Instance = null;
             }
+            
+            _atomRenderData.Dispose();
+            _atomRenderDataBuffer?.Dispose();
+        }
+        
+        public bool HasAnyRenderEntity()
+        {
+            return _renderProcessor.HasAnyRenderEntity();
+        }
+        
+        public (Vector3, Vector3) GetBound(int index)
+        {
+            return _renderProcessor.GetBound(index);
+        }
+        
+        public void UnregisterRenderEntity(Formula formula)
+        {
+            _renderProcessor.RemoveFormula(formula);
+            _isDirty = true;
         }
 
         public void RegisterRenderEntity(Formula formula, Vector3 offset)
@@ -81,10 +89,40 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
             _renderProcessor.AddFormula(formula, offset);
             _isDirty = true;
         }
-
-        public void RenderAtom(Stack<Matrix4x4> matricesStack, RenderState state = RenderState.Opaque)
+        
+        public int GetAtomCount()
         {
+            return _renderProcessor.GetAtomCount();
+        }
+
+        public void RenderAtom(Stack<Matrix4x4> matricesStack, out GraphicsBuffer atomRenderData,
+            RenderState state = RenderState.Opaque)
+        {
+            var i = GetAtomCount();
             _renderProcessor.ForeachElement((element, renderable) =>
+            {
+                var color = _colorAssigner.GetColorForElement(element);
+                
+                for (var t = 0; t <renderable.Atoms.Count; t++)
+                {
+                    i--;
+                    _atomRenderData[i] = new AtomRenderData
+                    {
+                        Color = new float4(color.r, color.g, color.b, color.a)
+                    };
+                }
+                
+                _atomRenderer.Render(renderable, matricesStack, state);
+            });
+            
+            _atomRenderDataBuffer.SetData(_atomRenderData);
+            atomRenderData = _atomRenderDataBuffer;
+        }
+        
+        public void RenderAtom(Stack<Matrix4x4> matricesStack,
+            RenderState state = RenderState.Opaque)
+        {
+            _renderProcessor.ForeachElement((_, renderable) =>
             {
                 _atomRenderer.Render(renderable, matricesStack, state);
             });
@@ -115,8 +153,17 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
         public void CheckModelMatrix()
         {
             if (!_isDirty) return;
+            // Note: Dispose the previous atom render data
+            _atomRenderData.Dispose();
+            _atomRenderDataBuffer?.Dispose();
+
+            // Note: Refresh the render processor
             _renderProcessor.Refresh();
             _renderProcessor.Recalculate();
+            _colorAssigner.Clear();
+            _atomRenderData = new NativeArray<AtomRenderData>(_renderProcessor.GetAtomCount(), Allocator.Persistent);
+            Debug.Log($"Atom count: {_renderProcessor.GetAtomCount()}");
+            _atomRenderDataBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Constant, _atomRenderData.Length, Marshal.SizeOf<AtomRenderData>());
             _isDirty = false;
         }
     }

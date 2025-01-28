@@ -103,7 +103,7 @@ MonoBehaviour:
   m_Active: 1
   outlineShader: {fileID: 2100000, guid: 116f320b3e5aa814783a782ce9450b5e, type: 2}
   atomMaterial: {fileID: 2100000, guid: 512ea71adcefdd04f95ad932f53da117, type: 2}
-  bondMaterial: {fileID: 0}
+  bondMaterial: {fileID: 2100000, guid: d01f6686ca97d264589a979eaedabc0e, type: 2}
   atomMesh: {fileID: 4300000, guid: 3002299085865db4780b4e7ae86ac276, type: 2}
   oneBondMesh: {fileID: 4300000, guid: 5150d42306ee8ff44be62ca636e20420, type: 2}
   twoBondMesh: {fileID: 4300000, guid: cfe4f4981217e49449167ae2d85d8524, type: 2}

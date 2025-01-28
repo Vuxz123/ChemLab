@@ -363,15 +363,9 @@ MonoBehaviour:
   m_Name: ChemicalCompoundVolume
   m_EditorClassIdentifier: 
   active: 1
-  atomMaterial: {fileID: 0}
-  bondMaterial: {fileID: 0}
-  atomMesh: {fileID: 0}
-  oneBondMesh: {fileID: 0}
-  twoBondMesh: {fileID: 0}
-  threeBondMesh: {fileID: 0}
   bondRadius:
     m_OverrideState: 1
-    m_Value: 0.1
+    m_Value: 0.129
 --- !u!114 &-1454300172113318216
 MonoBehaviour:
   m_ObjectHideFlags: 3

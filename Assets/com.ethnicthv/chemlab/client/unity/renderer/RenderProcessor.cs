@@ -23,6 +23,10 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
         private readonly List<DoubleBondModel> _2Bonds = new();
         private readonly List<TripleBondModel> _3Bonds = new();
         
+        private readonly List<(Vector3, Vector3)> _bounds = new();
+        
+        private int _atomCount = 0;
+        
         public void ForeachElement(Action<Element, RenderAtomRenderable> action)
         {
             foreach (var temp in _atoms)
@@ -90,10 +94,25 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
             _1Bonds.Clear();
             _2Bonds.Clear();
             _3Bonds.Clear();
+            _bounds.Clear();
+        }
+        
+        public bool HasAnyRenderEntity()
+        {
+            return _storageFormulas.Count > 0;
+        }
+
+        public (Vector3, Vector3) GetBound(int index)
+        {
+            if (index < 0 || index >= _bounds.Count) return (Vector3.zero, Vector3.zero);
+            return _bounds[index];
         }
 
         public void Recalculate()
         {
+            _atomCount = 0;
+            var overallLowest = Vector3.positiveInfinity;
+            var overallHighest = Vector3.negativeInfinity;
             foreach (var temp in _storageFormulas)
             {
                 var (formula, offset) = temp;
@@ -103,6 +122,11 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
                 var atomModelDict = new Dictionary<Atom, GenericAtomModel>();
                 
                 atomsQueue.Enqueue((formula.GetStartAtom(), null));
+                
+                var lowest = Vector3.positiveInfinity;
+                var highest = Vector3.negativeInfinity;
+
+                #region Atom position calculation
 
                 while (atomsQueue.TryDequeue(out var value))
                 {
@@ -140,26 +164,47 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
                     atomModelDict[atom] = atomModel;
                     
                     //Note: skip first atom
-                    if (prevAtomModel == null)
+                    if (prevAtomModel != null)
                     {
-                        continue;
+                        //Note: calculate atom position
+                        var curARadius = ElementAtomRadius.Radius[atom.GetElement()];
+                        var prevARadius = ElementAtomRadius.Radius[prevAtomModel.GetAtom().GetElement()];
+                        var distance = prevARadius + curARadius + 1;
+                    
+                        var dirVec = _calculator.GetCurrentPosition(formula, atom, prevAtomModel);
+                    
+                        atomModel.Position = prevAtomModel.Position + dirVec * distance;
+                        //Note: add offset
+                        atomModel.Position += offset;
                     }
                     
-                    //Note: calculate atom position
-                    var curARadius = ElementAtomRadius.Radius[atom.GetElement()];
-                    var prevARadius = ElementAtomRadius.Radius[prevAtomModel.GetAtom().GetElement()];
-                    var distance = prevARadius + curARadius + 1;
-                    Debug.Log("Distance: " + distance);
+                    if (atomModel.Position.x < lowest.x) lowest.x = atomModel.Position.x;
+                    if (atomModel.Position.y < lowest.y) lowest.y = atomModel.Position.y;
+                    if (atomModel.Position.z < lowest.z) lowest.z = atomModel.Position.z;
                     
-                    var dirVec = _calculator.GetCurrentPosition(formula, atom, prevAtomModel);
-                    
-                    Debug.Log("DirVec: " + dirVec + " - " + dirVec.magnitude);
-                    Debug.Log("Post Mult: " + dirVec * distance + " - " + (dirVec * distance).magnitude);
-                    
-                    atomModel.Position = prevAtomModel.Position + dirVec * distance;
-                    //Note: add offset
-                    atomModel.Position += offset;
+                    if (atomModel.Position.x > highest.x) highest.x = atomModel.Position.x;
+                    if (atomModel.Position.y > highest.y) highest.y = atomModel.Position.y;
+                    if (atomModel.Position.z > highest.z) highest.z = atomModel.Position.z;
                 }
+                
+                _bounds.Add((lowest, highest));
+                
+                Debug.Log("Lowest: " + lowest);
+                Debug.Log("Highest: " + highest);
+
+                #endregion
+
+                #region Overall bounds
+                
+                if (lowest.x < overallLowest.x) overallLowest.x = lowest.x;
+                if (lowest.y < overallLowest.y) overallLowest.y = lowest.y;
+                if (lowest.z < overallLowest.z) overallLowest.z = lowest.z;
+                
+                if (highest.x > overallHighest.x) overallHighest.x = highest.x;
+                if (highest.y > overallHighest.y) overallHighest.y = highest.y;
+                if (highest.z > overallHighest.z) overallHighest.z = highest.z;
+
+                #endregion
 
                 var structure = formula.CloneStructure();
 
@@ -198,7 +243,15 @@ namespace com.ethnicthv.chemlab.client.unity.renderer
                         structure[bond.GetDestinationAtom()].RemoveAll(b => b.GetDestinationAtom() == atom);
                     }
                 }
+                
+                //Note: atom count
+                _atomCount += atomModelDict.Count;
             }
+        }
+
+        public int GetAtomCount()
+        {
+            return _atomCount;
         }
     }
 }

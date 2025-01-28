@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using com.ethnicthv.chemlab.client.model.bond;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -12,15 +15,29 @@ namespace com.ethnicthv.chemlab.client.unity.renderer.pass
         private readonly Material _atomMaterial;
         private readonly Material _bondMaterial;
 
+        private readonly Color _singleBondColor;
+        private readonly Color _doubleBondColor;
+        private readonly Color _tripleBondColor;
+
         private readonly Mesh _atomMesh;
         private readonly Mesh _oneBondMesh;
         private readonly Mesh _twoBondMesh;
         private readonly Mesh _threeBondMesh;
 
-        public ChemicalCompoundRenderPass(Material atomMaterial, Material bondMaterial, Mesh atomMesh, Mesh oneBondMesh, Mesh twoBondMesh, Mesh threeBondMesh)
+        private static readonly int Color1 = Shader.PropertyToID("_Color");
+        private static readonly int RenderData = Shader.PropertyToID("UnityInstancing_PerUnitData");
+        private GraphicsBuffer _buffer;
+
+        public ChemicalCompoundRenderPass(
+            Material atomMaterial, Material bondMaterial,
+            Color singleBondColor, Color doubleBondColor, Color tripleBondColor,
+            Mesh atomMesh, Mesh oneBondMesh, Mesh twoBondMesh, Mesh threeBondMesh)
         {
             _atomMaterial = atomMaterial;
             _bondMaterial = bondMaterial;
+            _singleBondColor = singleBondColor;
+            _doubleBondColor = doubleBondColor;
+            _tripleBondColor = tripleBondColor;
             _atomMesh = atomMesh;
             _oneBondMesh = oneBondMesh;
             _twoBondMesh = twoBondMesh;
@@ -38,43 +55,61 @@ namespace com.ethnicthv.chemlab.client.unity.renderer.pass
             public Mesh TwoBondMesh;
             public Mesh ThreeBondMesh;
             public Material AtomMaterial;
-            public Material BondMaterial;
+            public Material SingleBondMaterial;
+            public Material DoubleBondMaterial;
+            public Material TripleBondMaterial;
+            public BufferHandle AtomBuffer;
         }
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
+            if (RenderProgram.Instance == null) return;
+            if (_bondMaterial == null || _atomMaterial == null) return;
+            if (_atomMesh == null || _oneBondMesh == null || _twoBondMesh == null || _threeBondMesh == null) return;
+            if (RenderProgram.Instance.GetAtomCount() == 0) return;
+
             using (var builder = renderGraph
                        .AddRasterRenderPass<PassData>("ChemicalCompoundRenderPass", out var passData))
             {
-                if (RenderProgram.Instance != null)
-                {
-                    RenderProgram.Instance.CheckModelMatrix();
-                    
-                    passData.AtomMaterial = _atomMaterial;
-                    passData.BondMaterial = _bondMaterial;
-                    passData.AtomMesh = _atomMesh;
-                    passData.OneBondMesh = _oneBondMesh;
-                    passData.TwoBondMesh = _twoBondMesh;
-                    passData.ThreeBondMesh = _threeBondMesh;
-                    passData.MatricesStack0 = new Stack<Matrix4x4>();
-                    passData.MatricesStack1 = new Stack<Matrix4x4>();
-                    passData.MatricesStack2 = new Stack<Matrix4x4>();
-                    passData.MatricesStack3 = new Stack<Matrix4x4>();
-                    
-                    var volumeComponent =
-                        VolumeManager.instance.stack.GetComponent<ChemicalCompoundVolume>();
-                    
-                    //Note: setting the bond radius
-                    BondModel.BondRadius = volumeComponent.bondRadius.value;
+                RenderProgram.Instance.CheckModelMatrix();
 
-                    RenderProgram.Instance.RenderAtom(passData.MatricesStack0);
-                    RenderProgram.Instance.RenderBond(
-                        passData.MatricesStack1, passData.MatricesStack2, passData.MatricesStack3);
+                var singleBondMaterial = new Material(_bondMaterial);
+                singleBondMaterial.SetColor(Color1, _singleBondColor);
+                var doubleBondMaterial = new Material(_bondMaterial);
+                doubleBondMaterial.SetColor(Color1, _doubleBondColor);
+                var tripleBondMaterial = new Material(_bondMaterial);
+                tripleBondMaterial.SetColor(Color1, _tripleBondColor);
 
-                    builder.AllowPassCulling(false);
-                }
+                passData.AtomMaterial = _atomMaterial;
+                passData.SingleBondMaterial = singleBondMaterial;
+                passData.DoubleBondMaterial = doubleBondMaterial;
+                passData.TripleBondMaterial = tripleBondMaterial;
+                passData.AtomMesh = _atomMesh;
+                passData.OneBondMesh = _oneBondMesh;
+                passData.TwoBondMesh = _twoBondMesh;
+                passData.ThreeBondMesh = _threeBondMesh;
+                passData.MatricesStack0 = new Stack<Matrix4x4>();
+                passData.MatricesStack1 = new Stack<Matrix4x4>();
+                passData.MatricesStack2 = new Stack<Matrix4x4>();
+                passData.MatricesStack3 = new Stack<Matrix4x4>();
+
+                var volumeComponent =
+                    VolumeManager.instance.stack.GetComponent<ChemicalCompoundVolume>();
+
+                //Note: setting the bond radius
+                BondModel.BondRadius = volumeComponent.bondRadius.value;
+
+                RenderProgram.Instance.RenderAtom(passData.MatricesStack0, out var atomRenderData);
+                RenderProgram.Instance.RenderBond(
+                    passData.MatricesStack1, passData.MatricesStack2, passData.MatricesStack3);
+
+                builder.AllowPassCulling(false);
 
                 var resourceData = frameData.Get<UniversalResourceData>();
+
+                passData.AtomBuffer = builder.UseBuffer(renderGraph.ImportBuffer(atomRenderData));
+
+                builder.AllowGlobalStateModification(true);
 
                 builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
                 builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture);
@@ -88,18 +123,15 @@ namespace com.ethnicthv.chemlab.client.unity.renderer.pass
 
             var cmd = context.cmd;
 
-            if (data.AtomMaterial != null && data.AtomMesh != null)
-            {
-                cmd.DrawMeshInstanced(data.AtomMesh, 0, data.AtomMaterial, 1, data.MatricesStack0.ToArray());
-            }
+            data.AtomMaterial.SetConstantBuffer(RenderData, data.AtomBuffer, 0,
+                Marshal.SizeOf<AtomRenderData>() * RenderProgram.Instance.GetAtomCount());
 
-            if (data.BondMaterial != null && data.OneBondMesh != null && data.TwoBondMesh != null && data.ThreeBondMesh != null)
-            {
-                // Debug.Log("Drawing bonds : one = " + data.MatricesStack1.Count + ", two = " + data.MatricesStack2.Count + ", three = " + data.MatricesStack3.Count + ".");
-                cmd.DrawMeshInstanced(data.OneBondMesh, 0, data.BondMaterial, 0, data.MatricesStack1.ToArray());
-                cmd.DrawMeshInstanced(data.TwoBondMesh, 0, data.BondMaterial, 0, data.MatricesStack2.ToArray());
-                cmd.DrawMeshInstanced(data.ThreeBondMesh, 0, data.BondMaterial, 0, data.MatricesStack3.ToArray());
-            }
+            cmd.DrawMeshInstanced(data.AtomMesh, 0, data.AtomMaterial, 0, data.MatricesStack0.ToArray());
+
+            // Debug.Log("Drawing bonds : one = " + data.MatricesStack1.Count + ", two = " + data.MatricesStack2.Count + ", three = " + data.MatricesStack3.Count + ".");
+            cmd.DrawMeshInstanced(data.OneBondMesh, 0, data.SingleBondMaterial, 0, data.MatricesStack1.ToArray());
+            cmd.DrawMeshInstanced(data.TwoBondMesh, 0, data.DoubleBondMaterial, 0, data.MatricesStack2.ToArray());
+            cmd.DrawMeshInstanced(data.ThreeBondMesh, 0, data.TripleBondMaterial, 0, data.MatricesStack3.ToArray());
         }
     }
 }
