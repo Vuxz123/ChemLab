@@ -1,14 +1,21 @@
-﻿using Unity.VisualScripting;
+﻿using com.ethnicthv.chemlab.engine.api.molecule;
+using com.ethnicthv.chemlab.engine.api.molecule.formula;
+using com.ethnicthv.chemlab.engine.formula;
 
 namespace com.ethnicthv.chemlab.engine.molecule
 {
-    public class Molecule
+    public class Molecule : IMolecule
     {
-        public readonly Formula Formula;
+        private readonly Formula _formula;
         
         public Molecule(Formula formula)
         {
-            Formula = formula;
+            _formula = formula;
+        }
+
+        public IFormula GetFormula()
+        {
+            return _formula;
         }
     }
 }
