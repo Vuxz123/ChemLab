@@ -28,7 +28,8 @@ namespace com.ethnicthv.chemlab.client.model.position
 
             if (!prevAtomData.InRing)
             {
-                return _linear.GetNextPriorityPosition(inDirection, maxBranch, branchIndex);
+                //Note: apply rotation of the parent atom to the final position
+                return previousAtomModel.GetRotation() * _linear.GetNextPriorityPosition(inDirection, maxBranch, branchIndex);
             }
             else
             {

@@ -5,7 +5,7 @@ namespace com.ethnicthv.chemlab.engine.formula
 {
     public abstract class FormulaHelper
     {
-        public static void AddAtomToStructure(Atom rootAtom, Atom addedAtom, Dictionary<Atom, List<Bond>> mutableStructure, Bond.BondType bondType)
+        public static void AddAtomToStructure(Atom rootAtom, Atom addedAtom, SortedDictionary<Atom, List<Bond>> mutableStructure, Bond.BondType bondType)
         {
             if (!mutableStructure.ContainsKey(rootAtom))
             {
@@ -16,7 +16,7 @@ namespace com.ethnicthv.chemlab.engine.formula
             mutableStructure[addedAtom].Add(new Bond(addedAtom, rootAtom, bondType));
         }
         
-        public static void AddBondToStructure(Atom srcAtom, Atom dstAtom, Dictionary<Atom, List<Bond>> mutableStructure, Bond.BondType bondType)
+        public static void AddBondToStructure(Atom srcAtom, Atom dstAtom, SortedDictionary<Atom, List<Bond>> mutableStructure, Bond.BondType bondType)
         {
             if (!mutableStructure.ContainsKey(srcAtom))
             {
@@ -30,7 +30,7 @@ namespace com.ethnicthv.chemlab.engine.formula
             mutableStructure[dstAtom].Add(new Bond(dstAtom, srcAtom, bondType));
         }
         
-        public static int GetAvailableConnectivity(Atom atom, Dictionary<Atom, List<Bond>> structure)
+        public static int GetAvailableConnectivity(Atom atom, SortedDictionary<Atom, List<Bond>> structure)
         {
             if (!structure.ContainsKey(atom))
             {
