@@ -13,8 +13,12 @@ namespace com.ethnicthv.chemlab.engine.util
                 Debug.LogWarning("AtomKeyComparator: One of the atoms is null.");
                 return 0;
             }
+
+            if (x == y) return 0;
+            
             var t = x.GetElement() - y.GetElement();
-            return t == 0? x.GetCharge() - y.GetCharge() : t;
+            var c = x.GetCharge() - y.GetCharge();
+            return t == 0? c == 0? 1 : c : t;
         }
     }
 }

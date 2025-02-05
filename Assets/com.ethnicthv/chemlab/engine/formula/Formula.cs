@@ -6,6 +6,7 @@ using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.api.molecule.formula;
 using com.ethnicthv.chemlab.engine.util;
+using UnityEngine;
 
 namespace com.ethnicthv.chemlab.engine.formula
 {
@@ -13,7 +14,7 @@ namespace com.ethnicthv.chemlab.engine.formula
     public class Formula : IFormula
     {
         
-        private readonly SortedDictionary<Atom, List<Bond>> _structure;
+        private readonly Dictionary<Atom, List<Bond>> _structure;
 
         // <-- mutate by adding Atom to the structure -->
         private readonly List<Atom> _chargeAtoms;
@@ -35,11 +36,11 @@ namespace com.ethnicthv.chemlab.engine.formula
             _chargeAtoms = new List<Atom>();
             _startAtom = null;
             _mass = 0;
-            _structure = new SortedDictionary<Atom, List<Bond>>(new AtomKeyComparator());
+            _structure = new Dictionary<Atom, List<Bond>>();
             _rings = new List<FormulaRing>();
         }
 
-        private Formula(SortedDictionary<Atom, List<Bond>> structure, Atom startAtom)
+        private Formula(Dictionary<Atom, List<Bond>> structure, Atom startAtom)
         {
             _chargeAtoms = new List<Atom>();
             _mass = 0;
@@ -66,14 +67,14 @@ namespace com.ethnicthv.chemlab.engine.formula
             return formula;
         }
 
+        #region Builder
+
         public Atom GetCurrentAtom()
         {
             return _currentAtom;
         }
 
-        #region Builder
-
-        public static Formula CreateInstance(SortedDictionary<Atom, List<Bond>> structure, Atom startAtom)
+        public static Formula CreateInstance(Dictionary<Atom, List<Bond>> structure, Atom startAtom)
         {
             return new Formula(structure, startAtom);
         }
@@ -85,7 +86,8 @@ namespace com.ethnicthv.chemlab.engine.formula
                 _startAtom = startAtom,
                 _currentAtom = startAtom
             };
-            formula._structure[startAtom] = new List<Bond>();
+            formula._structure.Add(startAtom, new List<Bond>());
+            Debug.Log(formula._structure.ContainsKey(startAtom));
             return formula;
         }
 
