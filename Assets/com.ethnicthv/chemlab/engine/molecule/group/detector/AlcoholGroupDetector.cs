@@ -15,6 +15,10 @@ namespace com.ethnicthv.chemlab.engine.molecule.group.detector
         {
             //Note: anchorAtom = null to avoid warning, this will be assigned after if it's true
             anchorAtom = null;
+            
+            //Note: Check if the molecule is organic, if not, return false
+            if (!context.Molecule.IsOrganic()) return false;
+            
             var formula = context.Molecule.GetFormula();
             var structure = formula.GetStructure();
             var atoms = context.AtomList;

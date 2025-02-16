@@ -10,5 +10,9 @@ namespace com.ethnicthv.chemlab.engine.api.molecule
         public IFormula GetFormula();
         public IReadOnlyCollection<MoleculeGroup> GetGroups();
         public IReadOnlyCollection<Atom> GetAtomsInGroup(MoleculeGroup group);
+        public bool IsOrganic();
+        public bool IsIon();
+        public bool IsAromatic();
+        public bool IsCyclic();
     }
 }

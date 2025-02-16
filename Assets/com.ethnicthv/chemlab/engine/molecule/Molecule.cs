@@ -12,6 +12,10 @@ namespace com.ethnicthv.chemlab.engine.molecule
         private readonly Formula _formula;
         private Dictionary<MoleculeGroup, List<Atom>> _groups = new();
         
+        private bool _isOrganic;
+        
+        private Molecule() {}
+        
         public Molecule(Formula formula)
         {
             _formula = formula;
@@ -58,6 +62,26 @@ namespace com.ethnicthv.chemlab.engine.molecule
         public IReadOnlyCollection<Atom> GetAtomsInGroup(MoleculeGroup group)
         {
             return _groups[group];
+        }
+
+        public bool IsOrganic()
+        {
+            return _isOrganic;
+        }
+
+        public bool IsIon()
+        {
+            return _formula.GetChargeAtom().Count > 0;
+        }
+
+        public bool IsAromatic()
+        {
+            return _formula.IsAromatic;
+        }
+
+        public bool IsCyclic()
+        {
+            return _formula.IsCyclic;
         }
 
         public void ClearGroups()
