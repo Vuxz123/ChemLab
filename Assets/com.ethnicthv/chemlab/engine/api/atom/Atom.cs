@@ -6,12 +6,10 @@ namespace com.ethnicthv.chemlab.engine.api.atom
     public class Atom : IAtom
     {
         private readonly Element _element;
-        private int _charge;
         
-        public Atom(Element element, int charge = 0)
+        public Atom(Element element)
         {
             _element = element;
-            _charge = charge;
         }
         
         public ElementProperty GetProperty()
@@ -31,7 +29,7 @@ namespace com.ethnicthv.chemlab.engine.api.atom
 
         public object Clone()
         {
-            return new Atom(_element, _charge);
+            return new Atom(_element);
         }
 
         public Element GetElement()
@@ -42,16 +40,6 @@ namespace com.ethnicthv.chemlab.engine.api.atom
         public float GetMass()
         {
             return GetProperty().AtomicMass;
-        }
-
-        public int GetCharge()
-        {
-            return _charge;
-        }
-
-        public void SetCharge(int charge)
-        {
-            _charge = charge;
         }
     }
 }

@@ -5,13 +5,14 @@ using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.api.molecule;
 using com.ethnicthv.chemlab.engine.api.molecule.group;
+using com.ethnicthv.chemlab.engine.molecule.group.functional;
 using UnityEngine.Rendering.Universal.Internal;
 
 namespace com.ethnicthv.chemlab.engine.molecule.group.detector
 {
     public class AlcoholGroupDetector : IGroupDetector
     {
-        public bool ShouldApplyGroup(DetectingContext context, out Atom[] anchorAtom)
+        public bool ShouldApplyGroup(DetectingContext context, out IFunctionalGroup[] anchorAtom)
         {
             //Note: anchorAtom = null to avoid warning, this will be assigned after if it's true
             anchorAtom = null;
@@ -26,7 +27,7 @@ namespace com.ethnicthv.chemlab.engine.molecule.group.detector
 
             if (oxygen.Count == 0) return false;
 
-            var anchorAtoms = new List<Atom>();
+            var anchorAtoms = new LinkedList<IFunctionalGroup>();
             foreach (var atom in oxygen)
             {
                 //Note: Rule 1 is to check if the oxygen atom is connected to a carbon atom and a hydrogen atom
@@ -54,7 +55,7 @@ namespace com.ethnicthv.chemlab.engine.molecule.group.detector
                 if (cBonds.Any(b=>b.GetDestinationAtom().GetElement() == Element.Oxygen && b.GetBondType() == Bond.BondType.Double)) continue;
                 
                 Final:
-                anchorAtoms.Add(atom);
+                anchorAtoms.AddLast(new AlcoholFunctionalGroup(atom, y));
             }
 
             if (anchorAtoms.Count == 0) return false;

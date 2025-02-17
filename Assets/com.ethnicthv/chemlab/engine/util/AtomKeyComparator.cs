@@ -15,10 +15,8 @@ namespace com.ethnicthv.chemlab.engine.util
             }
 
             if (x == y) return 0;
-            
-            var t = x.GetElement() - y.GetElement();
-            var c = x.GetCharge() - y.GetCharge();
-            return t == 0? c == 0? 1 : c : t;
+
+            return x.GetElement().CompareTo(x.GetElement());
         }
     }
 }

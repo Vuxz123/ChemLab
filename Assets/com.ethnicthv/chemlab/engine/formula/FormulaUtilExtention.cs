@@ -35,13 +35,12 @@ namespace com.ethnicthv.chemlab.engine.formula
 
         public static Formula AddCarboxyl(this Formula formula)
         {
-            var origin = formula.GetCurrentAtom();
             var mainCarbon = new Atom(Element.Carbon);
             return formula
                 .AddAtom(mainCarbon)
                 .AddAtom(new Atom(Element.Oxygen), Bond.BondType.Double)
                 .MoveToAtom(mainCarbon)
-                .AddAtom(new Atom(Element.Oxygen, -1));
+                .AddAtom(new Atom(Element.Oxygen));
         }
     }
 }

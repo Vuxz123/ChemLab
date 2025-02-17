@@ -4,6 +4,7 @@ using com.ethnicthv.chemlab.engine.api.molecule;
 using com.ethnicthv.chemlab.engine.api.molecule.group;
 using com.ethnicthv.chemlab.engine.api.reaction;
 using com.ethnicthv.chemlab.engine.molecule;
+using com.ethnicthv.chemlab.engine.util;
 
 namespace com.ethnicthv.chemlab.engine.reaction
 {
@@ -20,26 +21,23 @@ namespace com.ethnicthv.chemlab.engine.reaction
             _reactions.Add(reaction);
         }
         
-        public void CheckForReaction(ReactionContext context , in LinkedList<IReactionResult> results)
+        public void CheckForReaction(ReactionContext context , in CustomList<IReactionResult> results)
         {
             //Note: Clear the old results list
             results.Clear();
             
             foreach (var reaction in _reactions)
             {
-                var reactantGroups = reaction.GetReactantGroups();
-                var found = reactantGroups.All(context.ContainsGroup);
-
-                if (!found)
+                if (reaction is INeedReactantGroups needReactantGroups)
                 {
-                    continue;
+                    var reactantGroups = needReactantGroups.GetReactantGroups();
+                    if (reactantGroups.Any(reactantGroup => !context.ContainsGroup(reactantGroup)))
+                    {
+                        continue;
+                    }
                 }
 
-                var temp = new Dictionary<MoleculeGroup, IMutableMolecule>();
-                
-
-                reaction.ForwardReaction(context, out var result);
-                results.AddLast(result);
+                reaction.ForwardReaction(context, results);
             }
         }
     }

@@ -2,13 +2,12 @@
 using com.ethnicthv.chemlab.engine.api.molecule;
 using com.ethnicthv.chemlab.engine.api.molecule.group;
 using com.ethnicthv.chemlab.engine.molecule;
+using com.ethnicthv.chemlab.engine.util;
 
 namespace com.ethnicthv.chemlab.engine.api.reaction
 {
     public interface IReaction
     {
-        public List<MoleculeGroup> GetReactantGroups();
-
-        public void ForwardReaction(ReactionContext context, out IReactionResult result);
+        public void ForwardReaction(ReactionContext context, in IOnlyPushList<IReactionResult> result);
     }
 }

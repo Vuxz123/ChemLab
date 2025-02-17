@@ -4,7 +4,7 @@ namespace com.ethnicthv.chemlab.engine.api.atom
 {
     public class Halogen : Atom, IGeneric
     {
-        public Halogen() : base(Element.Chlorine, -1)
+        public Halogen() : base(Element.Chlorine)
         {
         }
         

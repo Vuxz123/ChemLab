@@ -10,7 +10,7 @@ namespace com.ethnicthv.chemlab.engine.molecule
     public class Molecule : IMutableMolecule
     {
         private readonly Formula _formula;
-        private Dictionary<MoleculeGroup, List<Atom>> _groups = new();
+        private Dictionary<MoleculeGroup, List<IFunctionalGroup>> _groups = new();
         
         private bool _isOrganic;
         
@@ -38,28 +38,28 @@ namespace com.ethnicthv.chemlab.engine.molecule
         
         public void AddGroup(MoleculeGroup group)
         {
-            if (!_groups.ContainsKey(group)) _groups.Add(group, new List<Atom>());
+            if (!_groups.ContainsKey(group)) _groups.Add(group, new List<IFunctionalGroup>());
         }
         
-        public void AddAtomToGroup(MoleculeGroup group, Atom atom)
+        public void AddFunctionalGroup(MoleculeGroup group, IFunctionalGroup atom)
         {
             if (!_groups.ContainsKey(group)) return;
             _groups[group].Add(atom);
         }
         
-        public void AddAtomToGroup(MoleculeGroup group, Atom[] atom)
+        public void AddFunctionalGroup(MoleculeGroup group, IFunctionalGroup[] atom)
         {
             if (!_groups.ContainsKey(group)) return;
             _groups[group].AddRange(atom);
         }
         
-        public void RemoveAtomFromGroup(MoleculeGroup group, Atom atom)
+        public void RemoveFunctionalGroup(MoleculeGroup group, IFunctionalGroup atom)
         {
             if (!_groups.ContainsKey(group)) return;
             _groups[group].Remove(atom);
         }
         
-        public IReadOnlyCollection<Atom> GetAtomsInGroup(MoleculeGroup group)
+        public IReadOnlyCollection<IFunctionalGroup> GetAtomsInGroup(MoleculeGroup group)
         {
             return _groups[group];
         }
@@ -71,7 +71,7 @@ namespace com.ethnicthv.chemlab.engine.molecule
 
         public bool IsIon()
         {
-            return _formula.GetChargeAtom().Count > 0;
+            return false;
         }
 
         public bool IsAromatic()

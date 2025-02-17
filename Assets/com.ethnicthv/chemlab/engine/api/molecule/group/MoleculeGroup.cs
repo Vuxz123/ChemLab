@@ -15,6 +15,7 @@
         Alkene,
         Alkyne,
         Aromatic,
-        Halogen
+        Halogen,
+        Carboxyl
     }
 }

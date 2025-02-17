@@ -6,6 +6,7 @@ using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.api.molecule.formula;
 using com.ethnicthv.chemlab.engine.util;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace com.ethnicthv.chemlab.engine.formula
@@ -17,7 +18,6 @@ namespace com.ethnicthv.chemlab.engine.formula
         private readonly Dictionary<Atom, List<Bond>> _structure;
 
         // <-- mutate by adding Atom to the structure -->
-        private readonly List<Atom> _chargeAtoms;
         private Atom _startAtom;
         private float _mass;
         // <-- end -->
@@ -33,7 +33,6 @@ namespace com.ethnicthv.chemlab.engine.formula
 
         private Formula()
         {
-            _chargeAtoms = new List<Atom>();
             _startAtom = null;
             _mass = 0;
             _structure = new Dictionary<Atom, List<Bond>>();
@@ -42,14 +41,9 @@ namespace com.ethnicthv.chemlab.engine.formula
 
         private Formula(Dictionary<Atom, List<Bond>> structure, Atom startAtom)
         {
-            _chargeAtoms = new List<Atom>();
             _mass = 0;
             _structure = structure;
             _startAtom = startAtom;
-            if (startAtom.GetCharge() != 0)
-            {
-                _chargeAtoms.Add(startAtom);
-            }
         }
 
         public object Clone()
@@ -60,7 +54,11 @@ namespace com.ethnicthv.chemlab.engine.formula
                 formula._structure[key] = new List<Bond>(value);
             }
 
-            formula._chargeAtoms.AddRange(_chargeAtoms);
+            foreach (var ring in _rings)
+            {
+                formula._rings.Add(ring.CloneRing(formula));
+            }
+
             formula._startAtom = _startAtom;
             formula._mass = _mass;
 
@@ -132,12 +130,6 @@ namespace com.ethnicthv.chemlab.engine.formula
             FormulaHelper.AddAtomToStructure(_currentAtom, newAtom, _structure, bondType);
             _mass += newAtom.GetProperty().AtomicMass;
             _currentAtom = newAtom;
-            
-            
-            if (newAtom.GetCharge() != 0)
-            {
-                _chargeAtoms.Add(newAtom);
-            }
 
             return this;
         }
@@ -200,11 +192,6 @@ namespace com.ethnicthv.chemlab.engine.formula
             return new ReadOnlyDictionary<Atom, IReadOnlyList<Bond>>(result);
         }
 
-        public IReadOnlyList<Atom> GetChargeAtom()
-        {
-            return new ReadOnlyCollection<Atom>(_chargeAtoms);
-        }
-
         public IReadOnlyList<IFormulaRing> GetRings()
         {
             return _rings;
@@ -238,7 +225,6 @@ namespace com.ethnicthv.chemlab.engine.formula
         public FormulaAtomData CheckAtomData(Atom atom)
         {
             var element = atom.GetElement();
-            var charge = atom.GetCharge();
             var isCarbon = element == Element.Carbon;
             var hydrogenCount = isCarbon ? 4 - _structure[atom].Count : 0;
             var availableConnectivity = int.MaxValue;
@@ -246,18 +232,18 @@ namespace com.ethnicthv.chemlab.engine.formula
             var isInFormula = _structure.ContainsKey(atom);
             
             if (!isInFormula)
-                return new FormulaAtomData(element, charge, false, false, isCarbon, hydrogenCount,
+                return new FormulaAtomData(element, false, false, isCarbon, hydrogenCount,
                     availableConnectivity, neighbors);
             
             var inRing = _rings.Any(ring => ring.RingAtoms.Contains(atom));
             availableConnectivity = FormulaHelper.GetAvailableConnectivity(atom, _structure);
             neighbors = _structure[atom].Select(bond => bond.GetDestinationAtom()).ToList();
             
-            return new FormulaAtomData(element, charge, true, inRing, isCarbon, hydrogenCount,
+            return new FormulaAtomData(element, true, inRing, isCarbon, hydrogenCount,
                 availableConnectivity, neighbors);
         }
 
-        public void BreakBond(Atom atom1, Atom atom2)
+        public void RemoveBond(Atom atom1, Atom atom2)
         {
             var atom1Data = CheckAtomData(atom1);
             var atom2Data = CheckAtomData(atom2);
@@ -266,14 +252,28 @@ namespace com.ethnicthv.chemlab.engine.formula
                 case false when !atom2Data.InRing:
                 {
                     var bond = _structure[atom1].First(b => b.GetDestinationAtom() == atom2);
-                    BreakBondNonCheckRing(bond);
+                    RemoveBondNonCheckRing(bond);
+                    
+                    var stack = new Stack<Atom>();
+                    
+                    stack.Push(bond.GetDestinationAtom());
+
+                    while (stack.TryPop(out var temp))
+                    {
+                        foreach (var neighbor in _structure[temp].Where(neighbor => neighbor.GetDestinationAtom() == atom1))
+                        {
+                            RemoveBondNonCheckRing(neighbor);
+                            stack.Push(neighbor.GetSourceAtom());
+                        }
+                    }
+                    
                     break;
                 }
                 case true when atom2Data.InRing:
                 {
                     foreach (var ring in _rings)
                     {
-                        ring.BreakBond(atom1, atom2);
+                        ring.RemoveBond(atom1, atom2);
                     }
 
                     break;
@@ -283,12 +283,20 @@ namespace com.ethnicthv.chemlab.engine.formula
 
         #endregion
 
-        private void BreakBondNonCheckRing(Bond bond)
+        private void RemoveBondNonCheckRing(Bond bond)
         {
             var sourceAtom = bond.GetSourceAtom();
             var destinationAtom = bond.GetDestinationAtom();
             _structure[sourceAtom].Remove(bond);
             _structure[destinationAtom].Remove(bond);
+            if (_structure[sourceAtom].Count == 0)
+            {
+                _structure.Remove(sourceAtom);
+            }
+            if (_structure[destinationAtom].Count == 0)
+            {
+                _structure.Remove(destinationAtom);
+            }
         }
 
         public class FormulaRing : IFormulaRing
@@ -490,14 +498,14 @@ namespace com.ethnicthv.chemlab.engine.formula
                 return Formula;
             }
 
-            public void BreakBond(Atom atom1, Atom atom2)
+            public void RemoveBond(Atom atom1, Atom atom2)
             {
                 if (!RingAtoms.Contains(atom1) || !RingAtoms.Contains(atom2)) return;
                 var deletedBond = RingBonds.First(bond =>
                     bond.GetDestinationAtom() == atom1 && bond.GetSourceAtom() == atom2 ||
                     bond.GetDestinationAtom() == atom2 && bond.GetSourceAtom() == atom1);
                 RingBonds.Remove(deletedBond);
-                Formula.BreakBondNonCheckRing(deletedBond);
+                Formula.RemoveBondNonCheckRing(deletedBond);
                 Formula._rings.Remove(this);
             }
 
@@ -518,6 +526,17 @@ namespace com.ethnicthv.chemlab.engine.formula
             public FormulaAtomData CheckAtomData(Atom atom)
             {
                 return Formula.CheckAtomData(atom);
+            }
+
+            public FormulaRing CloneRing(Formula formula)
+            {
+                var ring = new FormulaRing(Size, formula);
+                ring.RingAtoms.AddRange(RingAtoms);
+                ring.RingBonds.AddRange(RingBonds);
+                ring._branches.AddRange(_branches);
+                ring._numOfDoubleBond = _numOfDoubleBond;
+                ring._isFormed = _isFormed;
+                return ring;
             }
         }
     }

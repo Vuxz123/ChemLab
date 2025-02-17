@@ -11,7 +11,7 @@ namespace com.ethnicthv.chemlab.engine.molecule.group
         public static GroupDetectingProgram Instance => _instance ??= new GroupDetectingProgram();
         private static GroupDetectingProgram _instance;
         
-        private Stack<IGroupDetector> _detectors = new();
+        private readonly Stack<IGroupDetector> _detectors = new();
         
         private GroupDetectingProgram() { }
         
@@ -40,7 +40,7 @@ namespace com.ethnicthv.chemlab.engine.molecule.group
                 if (anchorAtom == null || anchorAtom.Length == 0)
                     throw new Exception("Anchor atom is null or empty.");
                 
-                molecule.AddAtomToGroup(d.GetGroup(), anchorAtom);
+                molecule.AddFunctionalGroup(d.GetGroup(), anchorAtom);
                 
                 mixture.AddToGroup(d.GetGroup(), molecule);
                 

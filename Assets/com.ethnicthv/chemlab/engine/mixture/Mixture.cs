@@ -5,6 +5,7 @@ using com.ethnicthv.chemlab.engine.api.reaction;
 using com.ethnicthv.chemlab.engine.molecule;
 using com.ethnicthv.chemlab.engine.molecule.group;
 using com.ethnicthv.chemlab.engine.reaction;
+using com.ethnicthv.chemlab.engine.util;
 using Util = com.ethnicthv.chemlab.engine.mixture.MixtureUtil;
 
 namespace com.ethnicthv.chemlab.engine.mixture
@@ -16,7 +17,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
         private readonly Dictionary<Molecule, float> _mixtureComposition = new();
         private readonly Dictionary<MoleculeGroup, List<Molecule>> _moleculeGroups = new();
         
-        private readonly LinkedList<IReactionResult> _reactionResults = new();
+        private readonly CustomList<IReactionResult> _reactionResults = new();
         
         private bool _isMixtureChecked;
 
@@ -85,7 +86,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
             return t;
         }
 
-        public Dictionary<Molecule, float> GetMixtureComposition()
+        public IReadOnlyDictionary<Molecule, float> GetMixtureComposition()
         {
             return _mixtureComposition;
         }
@@ -103,15 +104,17 @@ namespace com.ethnicthv.chemlab.engine.mixture
                 GroupDetectingProgram.Instance.CheckMolecule(molecule, this);
             }
             
-            ReactionProgram.Instance.CheckForReaction(new ReactionContext(_moleculeGroups, _mixtureComposition), in _reactionResults);
+            ReactionProgram.Instance.CheckForReaction(GetReactionContext(), in _reactionResults);
         }
 
         private void RunReactions()
         {
-            foreach (var reactionResult in _reactionResults)
+            var reactionTickContext = GetReactionTickContext();
+            foreach (var reactionResult in _reactionResults.GetList())
             {
-                var reactants = reactionResult.GetConsumedMolecules();
-                var products = reactionResult.GetProducedMolecules();
+                
+                var reactants = reactionResult.GetConsumedMolecules(reactionTickContext);
+                var products = reactionResult.GetProducedMolecules(reactionTickContext);
                 
                 foreach (var reactant in reactants.Keys)
                 {
@@ -130,5 +133,19 @@ namespace com.ethnicthv.chemlab.engine.mixture
             if (!_moleculeGroups.ContainsKey(getGroup)) _moleculeGroups.Add(getGroup, new List<Molecule>());
             _moleculeGroups[getGroup].Add(molecule);
         }
+
+        #region Context Builders
+
+        private ReactionTickContext GetReactionTickContext()
+        {
+            return new ReactionTickContext();
+        }
+        
+        private ReactionContext GetReactionContext()
+        {
+            return new ReactionContext(_moleculeGroups, _mixtureComposition);
+        }
+
+        #endregion
     }
 }

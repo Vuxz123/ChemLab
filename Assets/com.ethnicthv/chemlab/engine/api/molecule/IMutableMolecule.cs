@@ -7,8 +7,8 @@ namespace com.ethnicthv.chemlab.engine.api.molecule
     {
         public void AddGroup(MoleculeGroup group);
         public void DeleteGroup(MoleculeGroup group);
-        public void AddAtomToGroup(MoleculeGroup group, Atom atom);
-        public void AddAtomToGroup(MoleculeGroup group, Atom[] atom);
-        public void RemoveAtomFromGroup(MoleculeGroup group, Atom atom);
+        public void AddFunctionalGroup(MoleculeGroup group, IFunctionalGroup atom);
+        public void AddFunctionalGroup(MoleculeGroup group, IFunctionalGroup[] atom);
+        public void RemoveFunctionalGroup(MoleculeGroup group, IFunctionalGroup atom);
     }
 }

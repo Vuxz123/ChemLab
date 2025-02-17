@@ -6,7 +6,6 @@ namespace com.ethnicthv.chemlab.engine.api.molecule.formula
 {
     public record FormulaAtomData(
         Element Element,
-        int Charge,
         bool IsInFormula,
         bool InRing,
         bool IsCarbon,

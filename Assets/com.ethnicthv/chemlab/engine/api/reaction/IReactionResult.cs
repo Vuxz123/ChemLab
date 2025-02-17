@@ -7,7 +7,7 @@ namespace com.ethnicthv.chemlab.engine.api.reaction
     public interface IReactionResult : IComparable<IReactionResult>
     {
         public int GetPriority();
-        public Dictionary<Molecule, float> GetConsumedMolecules();
-        public Dictionary<Molecule, float> GetProducedMolecules();
+        public Dictionary<Molecule, float> GetConsumedMolecules(ReactionTickContext context);
+        public Dictionary<Molecule, float> GetProducedMolecules(ReactionTickContext context);
     }
 }
