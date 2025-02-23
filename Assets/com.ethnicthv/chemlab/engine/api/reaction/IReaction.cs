@@ -8,6 +8,6 @@ namespace com.ethnicthv.chemlab.engine.api.reaction
 {
     public interface IReaction
     {
-        public void ForwardReaction(ReactionContext context, in IOnlyPushList<IReactionResult> result);
+        public void CheckForReaction(ReactionContext context, in IOnlyPushList<IReactingReaction> result);
     }
 }

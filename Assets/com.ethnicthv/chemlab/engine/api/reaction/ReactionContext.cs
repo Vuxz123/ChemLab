@@ -6,8 +6,8 @@ namespace com.ethnicthv.chemlab.engine.api.reaction
 {
     public class ReactionContext
     {
-        private Dictionary<MoleculeGroup, List<Molecule>> _groups;
-        private Dictionary<Molecule, float> _molecules;
+        private readonly Dictionary<MoleculeGroup, List<Molecule>> _groups;
+        private readonly Dictionary<Molecule, float> _molecules;
         
         public ReactionContext(Dictionary<MoleculeGroup, List<Molecule>> groups, Dictionary<Molecule, float> molecules)
         {

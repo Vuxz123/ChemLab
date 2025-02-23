@@ -21,7 +21,7 @@ namespace com.ethnicthv.chemlab.engine.reaction
             _reactions.Add(reaction);
         }
         
-        public void CheckForReaction(ReactionContext context , in CustomList<IReactionResult> results)
+        public void CheckForReaction(ReactionContext context , in CustomList<IReactingReaction> results)
         {
             //Note: Clear the old results list
             results.Clear();
@@ -37,7 +37,7 @@ namespace com.ethnicthv.chemlab.engine.reaction
                     }
                 }
 
-                reaction.ForwardReaction(context, results);
+                reaction.CheckForReaction(context, results);
             }
         }
     }

@@ -6,10 +6,14 @@ namespace com.ethnicthv.chemlab.engine.api.atom
     public class Atom : IAtom
     {
         private readonly Element _element;
-        
-        public Atom(Element element)
+
+        public int RGroupNumber;
+        public readonly float FormalCharge;
+
+        public Atom(Element element, float formalCharge = 0.0f)
         {
             _element = element;
+            FormalCharge = formalCharge;
         }
         
         public ElementProperty GetProperty()
@@ -40,6 +44,10 @@ namespace com.ethnicthv.chemlab.engine.api.atom
         public float GetMass()
         {
             return GetProperty().AtomicMass;
+        }
+        
+        public bool IsNeutralHydrogen() {
+            return _element == Element.Hydrogen && FormalCharge == 0.0D;
         }
     }
 }

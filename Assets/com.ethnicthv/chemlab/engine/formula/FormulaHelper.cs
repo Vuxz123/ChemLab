@@ -1,5 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.api.atom;
+using com.ethnicthv.chemlab.engine.api.element;
+using com.ethnicthv.chemlab.engine.serializer;
 
 namespace com.ethnicthv.chemlab.engine.formula
 {
@@ -30,13 +36,152 @@ namespace com.ethnicthv.chemlab.engine.formula
             mutableStructure[dstAtom].Add(new Bond(dstAtom, srcAtom, bondType));
         }
         
-        public static int GetAvailableConnectivity(Atom atom, Dictionary<Atom, List<Bond>> structure)
+        public static int GetAvailableConnections(Atom atom, IReadOnlyList<Bond> bonds)
         {
-            if (!structure.ContainsKey(atom))
+            var connections = atom.GetMaxConnectivity();
+
+            return bonds.Aggregate(connections, (current, bond) => current - (int)bond.GetBondType());
+        }
+
+        public static int GetTotalConnections(Atom atom, IReadOnlyList<Bond> bonds)
+        {
+            return atom.GetMaxConnectivity() - GetAvailableConnections(atom, bonds);
+        }
+        
+        public static Branch GetMaximumBranch(Atom startAtom, Dictionary<Atom, List<Bond>> structure)
+        {
+            Dictionary<Atom, Node> allNodes = new();
+            foreach (var atom in structure.Keys)
             {
-                return atom.GetMaxConnectivity();
+                allNodes[atom] = new Node(atom);
             }
-            return atom.GetMaxConnectivity() - structure[atom].Count;
+
+            var currentNode = allNodes[startAtom];
+            currentNode.Visited = true;
+            var maximumBranch = new Branch(currentNode);
+            bool nodesAdded = true;
+
+            while (true)
+            {
+                while (nodesAdded)
+                {
+                    nodesAdded = false;
+                    Dictionary<Node, Bond.BondType> connectedUnvisitedNodesAndTheirBondTypes = new();
+                    foreach (var bond in structure[currentNode.GetAtom()])
+                    {
+                        var node = allNodes[bond.GetDestinationAtom()];
+                        if (node is { Visited: false })
+                        {
+                            connectedUnvisitedNodesAndTheirBondTypes[node] = bond.GetBondType();
+                        }
+                    }
+
+                    if (connectedUnvisitedNodesAndTheirBondTypes.Count == 1)
+                    {
+                        var onlyNode = connectedUnvisitedNodesAndTheirBondTypes.Keys.First();
+                        maximumBranch.Add(onlyNode, connectedUnvisitedNodesAndTheirBondTypes[onlyNode]);
+                        currentNode = onlyNode;
+                        nodesAdded = true;
+                    }
+                    else if (connectedUnvisitedNodesAndTheirBondTypes.Count() != 0)
+                    {
+                        Dictionary<Branch, Bond.BondType> connectedBranchesAndTheirBondTypes = new();
+                        foreach (var node in connectedUnvisitedNodesAndTheirBondTypes.Keys)
+                        {
+                            var newStructure = ShallowCopyStructure(structure);
+                            Bond bondToRemove = null;
+                            foreach (var bond in structure[node.GetAtom()]
+                                         .Where(bond => bond.GetDestinationAtom() == currentNode.GetAtom()))
+                            {
+                                bondToRemove = bond;
+                            }
+
+                            if (bondToRemove != null)
+                            {
+                                newStructure[node.GetAtom()].Remove(bondToRemove);
+                            }
+
+                            newStructure.Remove(currentNode.GetAtom());
+                            var branch = GetMaximumBranch(node.GetAtom(), newStructure);
+                            connectedBranchesAndTheirBondTypes[branch] = connectedUnvisitedNodesAndTheirBondTypes[node];
+                        }
+
+                        List<Branch> orderedConnectedBranches = new(connectedBranchesAndTheirBondTypes.Keys);
+                        orderedConnectedBranches.Sort((b1, b2) => b2.GetMass().CompareTo(b1.GetMass()));
+                        var biggestBranch = orderedConnectedBranches[0];
+                        maximumBranch.Add(biggestBranch, connectedBranchesAndTheirBondTypes[biggestBranch]);
+                        orderedConnectedBranches.RemoveAt(0);
+                        foreach (var sideBranch in orderedConnectedBranches)
+                        {
+                            currentNode.AddSideBranch(sideBranch, connectedBranchesAndTheirBondTypes[sideBranch]);
+                        }
+                    }
+                }
+
+                return maximumBranch;
+            }
+        }
+        
+        public static Branch GetMaximumBranchWithHighestMass(Dictionary<Atom, List<Bond>> structure)
+        {
+            var terminalAtoms = structure.Keys.Where(atom => structure[atom].Count == 1).ToList();
+
+            terminalAtoms.Sort((a1, a2) =>
+                GetMaximumBranch(a2, structure).GetMassOfLongestChain()
+                    .CompareTo(GetMaximumBranch(a1, structure).GetMassOfLongestChain())
+            );
+            terminalAtoms.Sort((a1, a2) =>
+                Branch.GetMassForComparisonInSerialization(a1)
+                    .CompareTo(Branch.GetMassForComparisonInSerialization(a2))
+            );
+            return GetMaximumBranch(terminalAtoms[0], structure);
+        }
+
+        public static Dictionary<Atom, List<Bond>> ShallowCopyStructure(Dictionary<Atom, List<Bond>> structureToCopy)
+        {
+            Dictionary<Atom, List<Bond>> newStructure = new();
+            foreach (var atom in structureToCopy.Keys)
+            {
+                var oldBonds = structureToCopy[atom];
+                var newBonds = oldBonds.Select(oldBond =>
+                    new Bond(atom, oldBond.GetDestinationAtom(), oldBond.GetBondType())).ToList();
+
+                newStructure[atom] = newBonds;
+            }
+
+            return newStructure;
+        }
+
+        public static Dictionary<Atom, List<Bond>> StripHydrogens(Dictionary<Atom, List<Bond>> structure)
+        {
+            Dictionary<Atom, List<Bond>> newStructure = new();
+            foreach (var (atom, value) in structure)
+            {
+                var bondsToInclude = new List<Bond>();
+                var includeAtom = !atom.IsNeutralHydrogen();
+                foreach (var bond in value.Where(bond =>
+                             atom.FormalCharge != 0.0 || bond.GetDestinationAtom().FormalCharge != 0.0 ||
+                             !bond.GetDestinationAtom().IsNeutralHydrogen()))
+                {
+                    bondsToInclude.Add(bond);
+                    if (bond.GetDestinationAtom().FormalCharge != 0.0)
+                    {
+                        includeAtom = true;
+                    }
+                }
+
+                if (includeAtom)
+                {
+                    newStructure[atom] = bondsToInclude;
+                }
+            }
+
+            return newStructure;
+        }
+
+        public static Bond.BondType TrailingBondType(string symbol)
+        {
+            return BondSerialize.Deserialize(symbol[^1]);
         }
     }
 }

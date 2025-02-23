@@ -15,7 +15,11 @@
         Alkene,
         Alkyne,
         Aromatic,
-        Halogen,
-        Carboxyl
+        Halide,
+        CarboxylicAcid,
+        NonTertiaryAmine,
+        UnsubstitutedAmide,
+        Carbonyl,
+        Nitrile
     }
 }

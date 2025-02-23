@@ -1,24 +1,23 @@
-﻿using com.ethnicthv.chemlab.engine.api.atom;
+﻿using com.ethnicthv.chemlab.engine.api;
+using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
 
-namespace com.ethnicthv.chemlab.engine.formula.topology
+namespace com.ethnicthv.chemlab.engine.formula
 {
-    public class Benzene : FormulaTopology
+    public class FormulaTopologies
     {
-        public Benzene() : base(BenzeneFactory, "benzene") { }
-
-        private static Formula BenzeneFactory(Formula formula = null)
+        private static Formula BenzeneFactory()
         {
-            var f = formula != null ? 
-                formula.AddRing(6, new Atom(Element.Carbon)) : 
-                Formula.CreateNewRingCarbonFormula(6);
+            var f = Formula.CreateNewRingCarbonFormula(6);
             return f
                 .SetAtom(new Atom(Element.Carbon), Bond.BondType.Double)
                 .SetAtom(new Atom(Element.Carbon), Bond.BondType.Single)
                 .SetAtom(new Atom(Element.Carbon), Bond.BondType.Double)
                 .SetAtom(new Atom(Element.Carbon), Bond.BondType.Single)
                 .SetAtom(new Atom(Element.Carbon), Bond.BondType.Double)
-                .FormRing(5);
+                .FormRing(5, "benzene");
         }
+        
+        public static FormulaTopology Benzene = new FormulaTopology(BenzeneFactory, "benzene");
     }
 }

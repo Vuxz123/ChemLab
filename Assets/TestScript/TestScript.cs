@@ -1,6 +1,7 @@
 ﻿using System;
 using com.ethnicthv.chemlab.client.unity.renderer;
 using com.ethnicthv.chemlab.engine;
+using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.formula;
@@ -83,6 +84,7 @@ namespace TestScript
         {
             formulaName.text = _formulasNames[_currentFormula];
             RenderProgram.Instance.RegisterRenderEntity(_formulas[_currentFormula], Vector3.zero);
+            Debug.Log(_formulas[_currentFormula].Serialize());
         }
         
         public void NextFormula()

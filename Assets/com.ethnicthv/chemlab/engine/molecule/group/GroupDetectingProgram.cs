@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using com.ethnicthv.chemlab.engine.api.atom;
+using com.ethnicthv.chemlab.engine.api.error.molecule;
 using com.ethnicthv.chemlab.engine.api.molecule.group;
 using com.ethnicthv.chemlab.engine.mixture;
 
@@ -20,7 +21,7 @@ namespace com.ethnicthv.chemlab.engine.molecule.group
             _detectors.Push(detector);
         }
 
-        public void CheckMolecule(Molecule molecule, Mixture mixture)
+        public void CheckMolecule(Molecule molecule)
         {
             molecule.ClearGroups();
             foreach (var d in _detectors)
@@ -38,11 +39,9 @@ namespace com.ethnicthv.chemlab.engine.molecule.group
                 
                 //Note: Check if anchorAtom is null or empty
                 if (anchorAtom == null || anchorAtom.Length == 0)
-                    throw new Exception("Anchor atom is null or empty.");
+                    throw new MoleculeGroupCheckException("Anchor atom is null or empty.", molecule);
                 
                 molecule.AddFunctionalGroup(d.GetGroup(), anchorAtom);
-                
-                mixture.AddToGroup(d.GetGroup(), molecule);
                 
                 break;
             }

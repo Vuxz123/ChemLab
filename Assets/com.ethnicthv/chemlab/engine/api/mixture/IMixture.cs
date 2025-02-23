@@ -4,13 +4,10 @@ namespace com.ethnicthv.chemlab.engine.api.mixture
 {
     public interface IMixture
     {
-        public MixtureType GetMixtureType();
         public void Tick();
-        public void AddMolecule(Molecule molecule, float moles);
         public void RemoveMolecule(Molecule molecule);
         public void SetMoles(Molecule molecule, float moles);
         public float GetMoles(Molecule molecule);
         public float AddMoles(Molecule molecule, float moles, out bool isMutating);
-        public float SubtractMoles(Molecule molecule, float moles, out bool isMutating);
     }
 }

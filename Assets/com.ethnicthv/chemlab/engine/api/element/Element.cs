@@ -2,6 +2,7 @@
 {
     public enum Element
     {
+        RGroup = 0,
         Hydrogen = 1,
         Helium = 2,
         Lithium = 3,

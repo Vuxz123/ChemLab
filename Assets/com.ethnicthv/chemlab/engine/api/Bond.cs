@@ -1,7 +1,7 @@
 ﻿using System;
 using com.ethnicthv.chemlab.engine.api.atom;
 
-namespace com.ethnicthv.chemlab.engine
+namespace com.ethnicthv.chemlab.engine.api
 {
     public class Bond
     {
@@ -52,10 +52,10 @@ namespace com.ethnicthv.chemlab.engine
 
         public enum BondType
         {
-            Single,
-            Double,
-            Triple,
-            Aromatic
+            Single = 1,
+            Double = 2,
+            Triple = 3,
+            Aromatic = 4,
         }
     }
 }

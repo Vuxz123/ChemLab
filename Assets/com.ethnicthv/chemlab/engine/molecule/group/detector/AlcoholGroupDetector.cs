@@ -1,12 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using com.ethnicthv.chemlab.engine.api.atom;
+using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.api.element;
-using com.ethnicthv.chemlab.engine.api.molecule;
 using com.ethnicthv.chemlab.engine.api.molecule.group;
 using com.ethnicthv.chemlab.engine.molecule.group.functional;
-using UnityEngine.Rendering.Universal.Internal;
 
 namespace com.ethnicthv.chemlab.engine.molecule.group.detector
 {

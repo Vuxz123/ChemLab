@@ -3,6 +3,7 @@
     public enum MixtureType
     {
         Gas,
-        Solid
+        Solid,
+        Liquid
     }
 }

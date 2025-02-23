@@ -5,6 +5,7 @@ using com.ethnicthv.chemlab.client.model.bond;
 using com.ethnicthv.chemlab.client.model.position;
 using com.ethnicthv.chemlab.client.unity.renderer.type;
 using com.ethnicthv.chemlab.engine;
+using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.api.molecule.formula;
