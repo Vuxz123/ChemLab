@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using com.ethnicthv.chemlab.client.api.ui.compound;
 using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.util.pool;
