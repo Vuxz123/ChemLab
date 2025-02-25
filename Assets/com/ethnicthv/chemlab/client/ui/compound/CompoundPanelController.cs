@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using com.ethnicthv.chemlab.client.api.ui;
 using com.ethnicthv.chemlab.client.api.ui.compound;
 using com.ethnicthv.chemlab.client.core.renderer;
 using com.ethnicthv.chemlab.engine.api.molecule;
@@ -41,9 +40,6 @@ namespace com.ethnicthv.chemlab.client.ui.compound
             compoundName.text = _molecule2Display.GetTranslationKey(false);
             RenderProgram.Instance.RegisterRenderEntity(_molecule2Display.GetFormula(), Vector3.zero);
             
-            //Note: update element list
-            elementListPanelController.SetElementList(RenderProgram.Instance.GetElementColors());
-            
             if (_centerRenderedMoleculeCoroutine != null)
             {
                 StopCoroutine(_centerRenderedMoleculeCoroutine);
@@ -62,6 +58,9 @@ namespace com.ethnicthv.chemlab.client.ui.compound
             var center = (lower + higher) / 2;
             
             cameraBox.transform.position = center;
+            
+            //Note: update element list
+            elementListPanelController.SetElementList(RenderProgram.Instance.GetElementColors());
         }
     }
 }

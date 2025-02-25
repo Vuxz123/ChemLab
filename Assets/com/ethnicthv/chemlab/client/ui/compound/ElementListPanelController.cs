@@ -59,14 +59,12 @@ namespace com.ethnicthv.chemlab.client.ui.compound
 
         public void SetElementList(IReadOnlyDictionary<Element, Color> elementList)
         {
-            Debug.Log("Set element list");
             _elementList = elementList;
             UpdateList();
         }
 
         private void UpdateList()
         {
-            Debug.Log("Update list");
             ClearList();
             foreach (var element in _elementList)
             {
@@ -86,7 +84,6 @@ namespace com.ethnicthv.chemlab.client.ui.compound
         
         private IElementListItemController Factory()
         {
-            Debug.Log("Create new");
             var elementListItem = Instantiate(elementListItemPrefab, elementListLayoutGroup.transform).GetComponent<ElementListItemController>();
             return elementListItem;
         }

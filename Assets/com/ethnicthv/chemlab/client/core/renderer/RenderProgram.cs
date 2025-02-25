@@ -20,7 +20,6 @@ namespace com.ethnicthv.chemlab.client.core.renderer
     {
         // <-- program properties -->
         public static IRenderProgram Instance { get; private set; }
-        
         public static RenderProgram RP { get; private set; }
 
         private readonly RenderProcessor _renderProcessor = new();
@@ -36,7 +35,7 @@ namespace com.ethnicthv.chemlab.client.core.renderer
         // <-- end of renderers -->
 
         // <-- state -->
-        private bool _isDirty = false;
+        private bool _isDirty;
         // <-- end of state -->
         
         // <-- shader properties -->
@@ -56,6 +55,18 @@ namespace com.ethnicthv.chemlab.client.core.renderer
             {
                 Destroy(gameObject);
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                Instance = null;
+                RP = this;
+            }
+            
+            _atomRenderData.Dispose();
+            _atomRenderDataBuffer?.Dispose();
         }
         
         public bool HasAnyRenderEntity()

@@ -21,7 +21,7 @@ namespace com.ethnicthv.chemlab.client.core.renderer
         
         private readonly Dictionary<Element, Color> _elementColors = new();
         
-        private int colorPivot = 0;
+        private int _colorPivot = 0;
 
         public Color GetColorForElement(Element element)
         {
@@ -30,11 +30,11 @@ namespace com.ethnicthv.chemlab.client.core.renderer
                 return forElement;
             }
             
-            if (colorPivot < StandardColors.Length)
+            if (_colorPivot < StandardColors.Length)
             {
-                _elementColors[element] = StandardColors[colorPivot];
-                colorPivot++;
-                return StandardColors[colorPivot - 1];
+                _elementColors[element] = StandardColors[_colorPivot];
+                _colorPivot++;
+                return StandardColors[_colorPivot - 1];
             }
 
             var color = GetRandomColor();
@@ -49,6 +49,7 @@ namespace com.ethnicthv.chemlab.client.core.renderer
         
         public void Clear()
         {
+            _colorPivot = 0;
             _elementColors.Clear();
         }
 

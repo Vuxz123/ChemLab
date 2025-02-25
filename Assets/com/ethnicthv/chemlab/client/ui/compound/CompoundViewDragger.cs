@@ -13,7 +13,6 @@ namespace com.ethnicthv.chemlab.client.ui.compound
         
         public void OnDrag(PointerEventData eventData)
         {
-            Debug.Log(eventData.delta);
             //Note: rotate the main Camera
             var transform1 = cameraBox;
             var x = eventData.delta.x * rotateSpeed * Mathf.Deg2Rad;
