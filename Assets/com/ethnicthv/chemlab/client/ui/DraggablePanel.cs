@@ -24,10 +24,6 @@ namespace com.ethnicthv.chemlab.client.ui
             var mousePosition = Input.mousePosition;
             var pointerPosition = ClampToWindow(mousePosition);
             Vector3 position = pointerPosition - _pointerOffset;
-            Debug.Log($"position: {position}");
-            Debug.Log($"mousePosition: {mousePosition}");
-            Debug.Log($"_pointerOffset: {_pointerOffset}");
-            Debug.Log($"pointerPosition: {pointerPosition}");
             mainPanel.position = position;
         }
         
