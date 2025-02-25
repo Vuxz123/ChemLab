@@ -1,4 +1,4 @@
-﻿using com.ethnicthv.chemlab.client.unity.renderer;
+﻿using com.ethnicthv.chemlab.client.core.renderer;
 using UnityEngine;
 
 namespace TestScript

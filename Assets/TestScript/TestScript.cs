@@ -1,25 +1,32 @@
-﻿using System;
-using com.ethnicthv.chemlab.client.unity.renderer;
-using com.ethnicthv.chemlab.engine;
+﻿using System.Collections.Generic;
+using com.ethnicthv.chemlab.client.ui;
 using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.api.atom;
 using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.formula;
+using com.ethnicthv.chemlab.engine.mixture;
+using com.ethnicthv.chemlab.engine.molecule;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace TestScript
 {
     public class TestScript : MonoBehaviour
     {
-        private Formula[] _formulas = new Formula[5];
-        private String[] _formulasNames = new String[5];
+        private Mixture _mixture;
+        private List<Molecule> _molecules;
+        private readonly Formula[] _formulas = new Formula[5];
+        private readonly string[] _formulasNames = new string[5];
 
-        public Text formulaName;
+        public TextMeshProUGUI formulaName;
 
         private void Start()
         {
+            var mixtures = new Dictionary<Mixture, float>()
+            {
+                { Mixture.Pure(Molecules.Water), 0.5f }, { Mixture.Pure(Molecules.SulfuricAcid), 0.5f }
+            };
+            
             {
                 var formula = Formula.CreateNewCarbonFormula().AddAtom(new Atom(Element.Hydrogen));
                 var start = formula.GetStartAtom();
@@ -35,6 +42,8 @@ namespace TestScript
 
                 _formulas[0] = formula;
                 _formulasNames[0] = "C4H6";
+                
+                mixtures.Add(Mixture.Pure(Molecule.Builder.Create(true).Structure(formula).Build()), 0.5f);
             }
 
             {
@@ -42,14 +51,8 @@ namespace TestScript
 
                 _formulas[1] = formula;
                 _formulasNames[1] = "HCl";
-            }
-
-            {
-                var formula = Formula.CreateNewFormula(new Atom(Element.Oxygen)).AddAtom(new Atom(Element.Hydrogen));
-                formula.MoveToAtom(formula.GetStartAtom()).AddAtom(new Atom(Element.Hydrogen));
-
-                _formulas[2] = formula;
-                _formulasNames[2] = "H2O";
+                
+                mixtures.Add(Mixture.Pure(Molecule.Builder.Create(true).Structure(formula).Build()), 0.5f);
             }
 
             {
@@ -63,6 +66,8 @@ namespace TestScript
 
                 _formulas[3] = formula;
                 _formulasNames[3] = "HCOOH";
+                
+                mixtures.Add(Mixture.Pure(Molecule.Builder.Create(true).Structure(formula).Build()), 0.5f);
             }
 
             {
@@ -73,31 +78,41 @@ namespace TestScript
 
                 _formulas[4] = formula;
                 _formulasNames[4] = "NH4";
+                
+                mixtures.Add(Mixture.Pure(Molecule.Builder.Create(true).Structure(formula).Build()), 0.5f);
             }
+            
+            _mixture = Mixture.Mix(mixtures);
+            
+            _molecules = new List<Molecule>(_mixture.GetMixtureComposition().Keys);
+            
+            _mixture.Tick();
             
             UpdateRenderEntity();
         }
         
-        private int _currentFormula = 0;
+        private int _currentFormula;
         
         public void UpdateRenderEntity()
         {
-            formulaName.text = _formulasNames[_currentFormula];
-            RenderProgram.Instance.RegisterRenderEntity(_formulas[_currentFormula], Vector3.zero);
-            Debug.Log(_formulas[_currentFormula].Serialize());
+            var molecule = _molecules[_currentFormula];
+            foreach (var (atom, bonds) in molecule.GetFormula().GetStructure())
+            {
+                Debug.Log(ElementProperty.GetElementProperty(atom.GetElement()).GetSymbol() + " " + bonds.Count);
+            }
+            
+            UIManager.Instance.CompoundPanelController.SetDisplayedMolecule(molecule);
         }
         
         public void NextFormula()
         {
-            RenderProgram.Instance.UnregisterRenderEntity(_formulas[_currentFormula]);
-            _currentFormula = (_currentFormula + 1) % _formulas.Length;
+            _currentFormula = (_currentFormula + 1) % _molecules.Count;
             UpdateRenderEntity();
         }
         
         public void PreviousFormula()
         {
-            RenderProgram.Instance.UnregisterRenderEntity(_formulas[_currentFormula]);
-            _currentFormula = (_currentFormula - 1 + _formulas.Length) % _formulas.Length;
+            _currentFormula = (_currentFormula - 1 + _molecules.Count) % _molecules.Count;
             UpdateRenderEntity();
         }
 
