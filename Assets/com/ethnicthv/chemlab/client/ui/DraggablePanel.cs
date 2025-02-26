@@ -1,5 +1,4 @@
-﻿using Unity.VisualScripting;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace com.ethnicthv.chemlab.client.ui
@@ -16,6 +15,9 @@ namespace com.ethnicthv.chemlab.client.ui
             var position = mainPanel.position;
             var mousePosition = Input.mousePosition;
             _pointerOffset = mousePosition - position;
+            
+            //Note: set mainPanel as LastSibling
+            mainPanel.transform.SetAsLastSibling();
         }
         
         public void OnDrag(PointerEventData eventData)

@@ -25,6 +25,7 @@ namespace com.ethnicthv.chemlab.client.ui.compound
         public void OpenPanel()
         {
             gameObject.SetActive(false);
+            gameObject.transform.SetAsLastSibling();
         }
         
         public void SetDisplayedMolecule(IMolecule molecule)

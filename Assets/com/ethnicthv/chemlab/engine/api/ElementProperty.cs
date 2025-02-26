@@ -65,9 +65,10 @@ namespace com.ethnicthv.chemlab.engine.api
             return ElementProperties[atomicNumber];
         }
 
-        public static ElementProperty GetElementProperty(string symbol)
+        public static ElementProperty GetElementProperty(string symbol, bool isName = false)
         {
-            return ElementProperties.First(property => property.Symbol == symbol);
+            return isName ? ElementProperties.First(property => property.Name == symbol) : 
+                ElementProperties.First(property => property.Symbol == symbol);
         }
 
         private static readonly ElementProperty[] ElementProperties =
@@ -90,7 +91,7 @@ namespace com.ethnicthv.chemlab.engine.api
                 2.34f, 2349f, 4200f, 2.04f, new[] { 3 }),
 
             new(12.011f, "C", "Carbon", 6, "[He] 2s2 2p2", ElementGroup.NonMetals,
-                2.267f, 3800f, 4300f, 2.55f, new[] { 4 }),
+                2.267f, 3800f, 4300f, 2.55f, new[] { 2, 4 }),
 
             new(14.007f, "N", "Nitrogen", 7, "[He] 2s2 2p3",
                 ElementGroup.NonMetals, 0.0012506f, 63.15f, 77.36f, 3.04f, new[] { 3, 5 }),

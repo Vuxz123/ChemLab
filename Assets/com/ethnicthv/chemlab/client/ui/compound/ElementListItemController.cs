@@ -15,7 +15,8 @@ namespace com.ethnicthv.chemlab.client.ui.compound
         [SerializeField] private Image background;
         [SerializeField] private Image elementColor;
         [SerializeField] private TextMeshProUGUI elementName;
-        
+
+        private Element _element;
         
         private static readonly Color HoverColor = new(1f, 1f, 1f, 0.1f);
         private static readonly Color NormalColor = new(1f, 1f, 1f, 0f);
@@ -27,6 +28,7 @@ namespace com.ethnicthv.chemlab.client.ui.compound
 
         public void Setup(Element element, Color color)
         {
+            _element = element;
             elementColor.color = color;
             elementName.text = ElementProperty.GetElementProperty(element).GetName();
             gameObject.SetActive(true);
@@ -46,7 +48,7 @@ namespace com.ethnicthv.chemlab.client.ui.compound
         
         public void OnPointerClick(PointerEventData eventData)
         {
-            Debug.Log("Element clicked");
+            UIManager.Instance.ElementPanelManager.OpenNewPanel(_element);
         }
     }
 }

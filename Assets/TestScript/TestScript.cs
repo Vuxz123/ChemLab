@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using com.ethnicthv.chemlab.client.api.ui.element;
 using com.ethnicthv.chemlab.client.ui;
 using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.api.atom;
@@ -89,6 +91,8 @@ namespace TestScript
             _mixture.Tick();
             
             UpdateRenderEntity();
+
+            Debug.Log(ElementUtil.GetFullElectronConfiguration("[Ar] 3d1 4s2").Aggregate("", (current, electron) => current + electron + "/"));
         }
         
         private int _currentFormula;
