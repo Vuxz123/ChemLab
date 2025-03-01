@@ -1,0 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace com.ethnicthv.chemlab.client.api.core.game
+{
+    public interface IInteractable
+    {
+        void OnInteract();
+        
+        List<(string name, Action onClick)> GetOptions();
+        
+        void OnHover();
+
+        GameObject GetHoverPanel();
+        
+        Transform GetMainTransform();
+    }
+}

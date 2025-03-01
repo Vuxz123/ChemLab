@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using com.ethnicthv.chemlab.client.api.core;
+using com.ethnicthv.chemlab.client.api.core.render;
 using com.ethnicthv.chemlab.client.core.renderer.render;
 using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.api.molecule.formula;

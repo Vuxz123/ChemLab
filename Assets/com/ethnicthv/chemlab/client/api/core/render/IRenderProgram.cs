@@ -3,7 +3,7 @@ using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.api.molecule.formula;
 using UnityEngine;
 
-namespace com.ethnicthv.chemlab.client.api.core
+namespace com.ethnicthv.chemlab.client.api.core.render
 {
     public interface IRenderProgram
     {

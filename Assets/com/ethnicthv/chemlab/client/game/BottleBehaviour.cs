@@ -1,0 +1,113 @@
+﻿using System;
+using System.Collections.Generic;
+using com.ethnicthv.chemlab.client.api.core.game;
+using com.ethnicthv.chemlab.client.chemistry;
+using com.ethnicthv.chemlab.client.core.game;
+using com.ethnicthv.chemlab.engine.api.mixture;
+using com.ethnicthv.chemlab.engine.mixture;
+using com.ethnicthv.chemlab.engine.molecule;
+using UnityEngine;
+
+namespace com.ethnicthv.chemlab.client.game
+{
+    public class BottleBehaviour : MonoBehaviour, IInteractable, IMixtureContainer
+    {
+        [SerializeField] private float maxVolume = 1f;
+        [SerializeField] private GameObject fillerPrefab;
+        [SerializeField] private List<SpriteRenderer> fillers;
+        [SerializeField] private Transform fillersParent;
+        
+        private Mixture _contents;
+
+        private readonly Dictionary<SpriteRenderer, LiquidPart> _fillerParts = new();
+        
+        private static readonly int FillThreshold = Shader.PropertyToID("_FillThreshold");
+        private static readonly int Fill = Shader.PropertyToID("_Fill");
+
+        private void Awake()
+        {
+            InteractableManager.RegisterInteractable(gameObject, this);
+        }
+        
+        private void Start()
+        {
+            _contents = Mixture.Pure(Molecules.Water);
+            
+            UpdateLiquidContent();
+        }
+
+        private void OnDestroy()
+        {
+            InteractableManager.UnregisterInteractable(gameObject);
+        }
+
+        private SpriteRenderer CreateFiller()
+        {
+            var filler = Instantiate(fillerPrefab, fillersParent);
+            fillers.Add(filler.GetComponent<SpriteRenderer>());
+            return filler.GetComponent<SpriteRenderer>();
+        }
+
+        private void UpdateLiquidContent()
+        {
+            var phases = _contents.SeparatePhases(maxVolume);
+            phases.LiquidMixture.UpdateColor();
+            var color = phases.LiquidMixture.GetColor();
+            var fill = phases.LiquidVolume / maxVolume;
+            LiquidPart part = new LiquidPart {height = fill, color = color};
+            _fillerParts[CreateFiller()] = part;
+            
+            UpdateLiquidDisplay();
+        }
+
+        private void UpdateLiquidDisplay()
+        {
+            //Note: Sort the fillers by the height of the fillers from the lowest to the highest
+            fillers.Sort((a, b) => _fillerParts[a].height.CompareTo(_fillerParts[b].height));
+
+            var prevFill = 0f;
+            foreach (var f in fillers)
+            {
+                var part = _fillerParts[f];
+                UpdateFiller(f, part.height, prevFill, part.color);
+                prevFill = part.height;
+            }
+        }
+
+        private void UpdateFiller(SpriteRenderer display, float fillAmount, float threshold, Color color)
+        {
+            display.material.SetFloat(Fill, fillAmount);
+            display.material.SetFloat(FillThreshold, threshold);
+            display.color = color;
+        }
+
+        public void OnInteract()
+        {
+            Debug.Log("Interacted with bottle");
+        }
+
+        public List<(string name, Action onClick)> GetOptions()
+        {
+            return new List<(string name, Action onClick)>();
+        }
+
+        public void OnHover()
+        {
+        }
+
+        public GameObject GetHoverPanel()
+        {
+            return null;
+        }
+
+        public Transform GetMainTransform()
+        {
+            return transform.parent;
+        }
+
+        public IMixture GetMixture()
+        {
+            return _contents;
+        }
+    }
+}
