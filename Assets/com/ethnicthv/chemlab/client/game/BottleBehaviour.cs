@@ -25,11 +25,6 @@ namespace com.ethnicthv.chemlab.client.game
         
         private static readonly int FillThreshold = Shader.PropertyToID("_FillThreshold");
         private static readonly int Fill = Shader.PropertyToID("_Fill");
-        
-        private void Start()
-        {
-            _contents = Mixture.Pure(Molecules.Water);
-        }
 
         private void OnEnable()
         {
