@@ -22,11 +22,12 @@ namespace com.ethnicthv.chemlab.engine
             {
                 Destroy(gameObject);
             }
+            
+            Setup();
         }
         
         private void Start()
         {
-            Setup();
             
             chemicalThread.StartTick();
         }
