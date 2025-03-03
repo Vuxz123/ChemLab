@@ -117,6 +117,7 @@ namespace com.ethnicthv.chemlab.client.core.game
 
         private Coroutine _dragCoroutine;
         private Vector3 _velocity = Vector3.zero;
+        private IInteractable _dragInteractable;
 
         private void OnDragStart()
         {
@@ -127,6 +128,7 @@ namespace com.ethnicthv.chemlab.client.core.game
 
             if (!InteractableManager.TryGetInteractable(hit.collider.gameObject, out var interactable)) return;
 
+            _dragInteractable = interactable;
             _dragCoroutine = StartCoroutine(DragCoroutine(interactable));
         }
 
@@ -153,7 +155,16 @@ namespace com.ethnicthv.chemlab.client.core.game
             if (_dragCoroutine != null)
             {
                 StopCoroutine(_dragCoroutine);
+                var ray = ClientManager.Instance.mainCamera.ScreenPointToRay(Input.mousePosition);
+                GameObject other = null;
+                if (Physics.Raycast(ray, out var hit, maxDistance: Mathf.Infinity, layerMask: draggableLayer))
+                {
+                    other = hit.collider.gameObject;
+                }
+                _dragInteractable.OnDrop(other);
             }
+            _dragCoroutine = null;
+            _dragInteractable = null;
         }
 
 #if UNITY_EDITOR

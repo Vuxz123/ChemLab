@@ -4,6 +4,13 @@
     {
         Hypothetical,
         Solvent,
-        AcutelyToxic
+        AcutelyToxic,
+        Solid,
+        UnsolvableGas,
+        OzoneDepleter,
+        AcidRain,
+        Smelly,
+        Smog,
+        Refrigerant
     }
 }

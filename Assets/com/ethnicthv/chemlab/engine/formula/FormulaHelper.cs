@@ -40,8 +40,9 @@ namespace com.ethnicthv.chemlab.engine.formula
         public static int GetAvailableConnections(Atom atom, IReadOnlyList<Bond> bonds)
         {
             var connections = atom.GetMaxConnectivity();
-
-            return bonds.Aggregate(connections, (current, bond) => current - (int)bond.GetBondType());
+            connections = bonds.Aggregate(connections, (current, bond) => current - (int)bond.GetBondType());
+            connections += (int) atom.FormalCharge;
+            return connections;
         }
 
         public static int GetTotalConnections(Atom atom, IReadOnlyList<Bond> bonds)
@@ -126,7 +127,7 @@ namespace com.ethnicthv.chemlab.engine.formula
         public static Branch GetMaximumBranchWithHighestMass(Dictionary<Atom, List<Bond>> structure)
         {
             var terminalAtoms = structure.Keys.Where(atom => structure[atom].Count == 1).ToList();
-
+            
             terminalAtoms.Sort((a1, a2) =>
                 GetMaximumBranch(a2, structure).GetMassOfLongestChain()
                     .CompareTo(GetMaximumBranch(a1, structure).GetMassOfLongestChain())

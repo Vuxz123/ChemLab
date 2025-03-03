@@ -114,7 +114,7 @@ Material:
     - _Fill: 1
     - _FillLowerBound: 0
     - _FillThreshold: 0
-    - _FillUpperBound: 0.855
+    - _FillUpperBound: 0.797
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0

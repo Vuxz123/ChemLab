@@ -188,9 +188,6 @@ namespace com.ethnicthv.chemlab.client.core.renderer
                 }
                 
                 _bounds.Add((lowest, highest));
-                
-                Debug.Log("Lowest: " + lowest);
-                Debug.Log("Highest: " + highest);
 
                 #endregion
 

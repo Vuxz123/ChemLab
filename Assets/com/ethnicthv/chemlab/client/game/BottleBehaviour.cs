@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using com.ethnicthv.chemlab.client.api.core.game;
 using com.ethnicthv.chemlab.client.chemistry;
 using com.ethnicthv.chemlab.client.core.game;
+using com.ethnicthv.chemlab.engine;
+using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.api.mixture;
 using com.ethnicthv.chemlab.engine.mixture;
 using com.ethnicthv.chemlab.engine.molecule;
@@ -10,7 +12,7 @@ using UnityEngine;
 
 namespace com.ethnicthv.chemlab.client.game
 {
-    public class BottleBehaviour : MonoBehaviour, IInteractable, IMixtureContainer
+    public class BottleBehaviour : MonoBehaviour, IInteractable, IMixtureContainer, IChemicalTicker
     {
         [SerializeField] private float maxVolume = 1f;
         [SerializeField] private GameObject fillerPrefab;
@@ -23,22 +25,22 @@ namespace com.ethnicthv.chemlab.client.game
         
         private static readonly int FillThreshold = Shader.PropertyToID("_FillThreshold");
         private static readonly int Fill = Shader.PropertyToID("_Fill");
-
-        private void Awake()
-        {
-            InteractableManager.RegisterInteractable(gameObject, this);
-        }
         
         private void Start()
         {
             _contents = Mixture.Pure(Molecules.Water);
-            
-            UpdateLiquidContent();
         }
 
-        private void OnDestroy()
+        private void OnEnable()
+        {
+            InteractableManager.RegisterInteractable(gameObject, this);
+            ChemicalTickerHandler.AddTicker(this);
+        }
+
+        private void OnDisable()
         {
             InteractableManager.UnregisterInteractable(gameObject);
+            ChemicalTickerHandler.RemoveTicker(this);
         }
 
         private SpriteRenderer CreateFiller()
@@ -105,9 +107,26 @@ namespace com.ethnicthv.chemlab.client.game
             return transform.parent;
         }
 
-        public IMixture GetMixture()
+        public void OnDrop(GameObject other)
+        {
+            if (other == null) return;
+            Debug.Log("Dropped on " + other.name);
+        }
+
+        public Mixture GetMixture()
         {
             return _contents;
+        }
+        
+        public void SetMixture(Mixture mixture)
+        {
+            _contents = mixture;
+            UpdateLiquidContent();
+        }
+
+        public void Tick()
+        {
+            _contents?.Tick();
         }
     }
 }

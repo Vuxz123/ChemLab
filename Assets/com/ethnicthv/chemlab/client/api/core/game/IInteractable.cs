@@ -15,5 +15,7 @@ namespace com.ethnicthv.chemlab.client.api.core.game
         GameObject GetHoverPanel();
         
         Transform GetMainTransform();
+
+        void OnDrop(GameObject other);
     }
 }

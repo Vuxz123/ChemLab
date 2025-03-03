@@ -13,10 +13,23 @@ namespace com.ethnicthv.chemlab.engine.reaction
     {
         public static readonly float GasConstant = 8.3145F;
         public static readonly int PriorityDefault = 0;
+        
+        private static readonly Dictionary<string, ReactingReaction> Reactions = new();
+        
+        public static ReactingReaction Get(string reactionId) {
+            return Reactions[reactionId];
+        }
+        
+        public static ReactionBuilder CreateBuilder()
+        {
+            return new ReactionBuilder();
+        }
 
         private Dictionary<Molecule, int> _reactants;
         private Dictionary<Molecule, int> _products;
         private Dictionary<Molecule, int> _orders;
+
+        private List<Molecule> _solids;
 
         private ReactionResult _result;
 
@@ -76,6 +89,21 @@ namespace com.ethnicthv.chemlab.engine.reaction
         public float GetEnthalpyChange()
         {
             return _enthalpyChange;
+        }
+
+        public bool IsConsumedSolid()
+        {
+            GetSolidReactants();
+            return _solids.Count > 0;
+        }
+
+        public IReadOnlyList<Molecule> GetSolidReactants()
+        {
+            if (_solids != null)
+            {
+                return _solids;
+            }
+            return _solids = _reactants.Keys.Where(molecule => molecule.IsSolid()).ToList();
         }
 
         public float GetRateConstant(float temperature)
@@ -150,7 +178,7 @@ namespace com.ethnicthv.chemlab.engine.reaction
                 _hasForcedHalfCellPotential = false;
             }
 
-            public ReactionBuilder(in IOnlyPushList<IReactingReaction> results)
+            internal ReactionBuilder(in IOnlyPushList<IReactingReaction> results)
             {
                 _reaction = new ReactingReaction();
                 _generated = false;
@@ -159,6 +187,21 @@ namespace com.ethnicthv.chemlab.engine.reaction
                 _reaction._products = new Dictionary<Molecule, int>();
                 _reaction._orders = new Dictionary<Molecule, int>();
                 _results = results;
+                _hasForcedPreExponentialFactor = false;
+                _hasForcedActivationEnergy = false;
+                _hasForcedEnthalpyChange = false;
+                _hasForcedHalfCellPotential = false;
+            }
+
+            internal ReactionBuilder()
+            {
+                _reaction = new ReactingReaction();
+                _generated = false;
+                _declaredAsReverse = false;
+                _reaction._reactants = new Dictionary<Molecule, int>();
+                _reaction._products = new Dictionary<Molecule, int>();
+                _reaction._orders = new Dictionary<Molecule, int>();
+                _results = null;
                 _hasForcedPreExponentialFactor = false;
                 _hasForcedActivationEnergy = false;
                 _hasForcedEnthalpyChange = false;
@@ -278,7 +321,8 @@ namespace com.ethnicthv.chemlab.engine.reaction
             {
                 if (conjugateBase.GetCharge() + 1 != acid.GetCharge())
                 {
-                    throw E("Acids must not violate the conservation of charge.");
+                    throw E("Acids must not violate the conservation of charge: " + acid.GetFullID() + " -> " +
+                            conjugateBase.GetFullID());
                 }
 
                 var id = acid.GetFullID();
@@ -445,8 +489,17 @@ namespace com.ethnicthv.chemlab.engine.reaction
 
                 if (!_generated)
                 {
-                    _results.Push(_reaction);
+                    Debug.Log("Built reaction: " + ReactionString());
+                    foreach (var reactant in _reaction._reactants.Keys) {
+                        reactant.AddReactantReaction(_reaction);
+                    };
+                    foreach (var product in _reaction._products.Keys) {
+                        product.AddProductReaction(_reaction);
+                    };
+                    Reactions[_reaction.GetId()] = _reaction;
                 }
+
+                _results?.Push(_reaction);
 
                 return _reaction;
             }
@@ -486,6 +539,11 @@ namespace com.ethnicthv.chemlab.engine.reaction
 
                 return reactionString;
             }
+        }
+
+        public string GetId()
+        {
+            return _id;
         }
 
         public static ReactionBuilder GeneratedReactionBuilder(in IOnlyPushList<IReactingReaction> results)

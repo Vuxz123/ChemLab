@@ -10,12 +10,37 @@ using com.ethnicthv.chemlab.engine.api.molecule.formula;
 using com.ethnicthv.chemlab.engine.api.molecule.group;
 using com.ethnicthv.chemlab.engine.formula;
 using com.ethnicthv.chemlab.engine.molecule.group;
+using com.ethnicthv.chemlab.engine.reaction;
+using UnityEngine;
 
 namespace com.ethnicthv.chemlab.engine.molecule
 {
     public class Molecule : IMutableMolecule
     {
+        private static readonly Dictionary<string, Molecule> MoleculeRegistry = new();
+        
+        public static Molecule GetMolecule(string id) {
+            if (string.IsNullOrEmpty(id)) return null;
+
+            var molecule = MoleculeRegistry[id];
+            if (molecule != null) return molecule;
+            try
+            {
+                return Builder.Create(true)
+                    .Structure(Formula.Deserialize(id))
+                    .Build();
+            }catch (Exception e)
+            {
+                Debug.LogWarning("Could not find Molecule '"+id+"'. With error: "+e.Message);
+            }
+            if (!"NO_MOLECULE".Equals(id)) Debug.LogWarning("Could not find Molecule '"+id+"'."); // The 'NO_MOLECULE' is just to stop false warnings due to the Chemical Poison mob effect
+            return null;
+        }
+        
         private Formula _formula;
+        
+        private readonly List<ReactingReaction> _reactantReactions = new();
+        private readonly List<ReactingReaction> _productReactions = new();
 
         private readonly Dictionary<MoleculeGroup, List<IFunctionalGroup>> _groups = new();
         private readonly HashSet<MoleculeTag> _tags = new();
@@ -58,6 +83,34 @@ namespace com.ethnicthv.chemlab.engine.molecule
             }
 
             return key;
+        }
+        
+        public Molecule GetEquivalent() {
+            foreach (var molecule in MoleculeRegistry.Values)
+            {
+                if (!(Math.Abs(GetMass() - molecule.GetMass()) < 0.001)) continue;  // Initially just check the masses match
+                if (_formula.Serialize()
+                    .Equals(molecule._formula.Serialize())) { // Check the structures match
+                    return molecule;
+                }
+            }
+            return this;
+        }
+        
+        public void AddReactantReaction(ReactingReaction reaction) {
+            if (reaction.ContainsReactant(this)) _reactantReactions.Add(reaction);
+        }
+        
+        public void AddProductReaction(ReactingReaction reaction) {
+            if (reaction.ContainsProduct(this)) _productReactions.Add(reaction);
+        }
+        
+        public IReadOnlyCollection<ReactingReaction> GetReactantReactions() {
+            return _reactantReactions;
+        }
+        
+        public IReadOnlyCollection<ReactingReaction> GetProductReactions() {
+            return _productReactions;
         }
 
         public string GetFullID()
@@ -115,7 +168,7 @@ namespace com.ethnicthv.chemlab.engine.molecule
 
         public bool IsIon()
         {
-            return false;
+            return _charge != 0;
         }
 
         public bool IsAromatic()
@@ -186,6 +239,16 @@ namespace com.ethnicthv.chemlab.engine.molecule
         public bool IsHypothetical()
         {
             return _tags.Contains(MoleculeTag.Hypothetical);
+        }
+        
+        public bool IsSolid()
+        {
+            return _tags.Contains(MoleculeTag.Solid);
+        }
+        
+        public bool IsUnsolvableGas()
+        {
+            return _tags.Contains(MoleculeTag.UnsolvableGas);
         }
 
         public HashSet<MoleculeTag> GetTags()
@@ -283,7 +346,7 @@ namespace com.ethnicthv.chemlab.engine.molecule
             {
                 return new Builder
                 {
-                    _novel = true
+                    _novel = isNovel
                 };
             }
 
@@ -380,6 +443,16 @@ namespace com.ethnicthv.chemlab.engine.molecule
             {
                 return Tag(MoleculeTag.Hypothetical);
             }
+            
+            public Builder Solid()
+            {
+                return Tag(MoleculeTag.Solid);
+            }
+            
+            public Builder UnsolvableGas()
+            {
+                return Tag(MoleculeTag.UnsolvableGas);
+            }
 
             public Builder Tag(params MoleculeTag[] tags)
             {
@@ -406,6 +479,14 @@ namespace com.ethnicthv.chemlab.engine.molecule
                 if (_molecule.GetAtoms().Count >= 100)
                 {
                     throw E("Molecule has too many Atoms");
+                }
+                
+                if (_novel) {
+                    Debug.LogWarning("Molecule " + _molecule._id + " is novel, it will not be registered.");
+                    var equivalentMolecule = _molecule.GetEquivalent();
+                    if (equivalentMolecule != _molecule) {
+                        return equivalentMolecule;
+                    }
                 }
 
                 var charge = _molecule.GetAtoms().Aggregate(0.0f, (current, atom) => current + atom.FormalCharge);
@@ -454,6 +535,14 @@ namespace com.ethnicthv.chemlab.engine.molecule
                 _molecule._novel = _novel;
 
                 _molecule.RefreshFunctionalGroups();
+                
+                if (!_novel) {
+                    if (_molecule._id == null) {
+                        throw E("Molecule's ID has not been declared.");
+                    }
+
+                    MoleculeRegistry[_molecule.GetFullID()] = _molecule;
+                }
 
                 return _molecule;
             }

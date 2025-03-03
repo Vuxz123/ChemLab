@@ -1,9 +1,10 @@
-﻿using com.ethnicthv.chemlab.engine.api.mixture;
+﻿using com.ethnicthv.chemlab.engine.mixture;
 
 namespace com.ethnicthv.chemlab.client.api.core.game
 {
     public interface IMixtureContainer
     {
-        public IMixture GetMixture();
+        public Mixture GetMixture();
+        public void SetMixture(Mixture mixture);
     }
 }

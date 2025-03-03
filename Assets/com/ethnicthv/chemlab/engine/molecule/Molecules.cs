@@ -9,7 +9,7 @@ namespace com.ethnicthv.chemlab.engine.molecule
     {
         private static Molecule.Builder Builder()
         {
-            return new Molecule.Builder();
+            return Molecule.Builder.Create(false);
         }
 
         public static readonly Molecule Water = Builder().ID("water")
@@ -34,10 +34,77 @@ namespace com.ethnicthv.chemlab.engine.molecule
             .Density(1830.2F).MolarHeatCapacity(83.68F).Tag(MoleculeTag.AcutelyToxic)
             .Build();
 
+        public static readonly Molecule Sodium = Builder().ID("sodium")
+            .Structure(Formula.CreateNewFormula(new Atom(Element.Sodium))).Solid().Build();
+
         public static readonly Molecule SodiumIon = Builder().ID("sodium_ion")
             .Structure(Formula.CreateNewFormula(new Atom(Element.Sodium, 1))).Density(900.0F).Build();
 
         public static readonly Molecule Chloride = Builder().ID("chloride")
             .Structure(Formula.CreateNewFormula(new Atom(Element.Chlorine, -1))).Build();
+
+        public static readonly Molecule Copper = Builder().ID("copper")
+            .Structure(Formula.CreateNewFormula(new Atom(Element.Copper))).Solid().Build();
+
+        public static readonly Molecule CopperIon = Builder().ID("copper_ion")
+            .Structure(Formula.CreateNewFormula(new Atom(Element.Copper, 1))).Density(900.0F).Build();
+
+        public static readonly Molecule Hydrogen = Builder().ID("hydrogen")
+            .Structure(Formula.CreateNewFormula(new Atom(Element.Hydrogen)).AddAtom(new Atom(Element.Hydrogen)))
+            .BoilingPointInKelvins(20.271f)
+            .UnsolvableGas()
+            .Density(70.85f)
+            .MolarHeatCapacity(28.84f)
+            .Build();
+
+        public static readonly Molecule HydrochloricAcid = Builder().ID("hydrochloric_acid")
+            .Structure(Formula.Deserialize("linear:ClH")).BoilingPoint(-85.05f)
+            .Density(1490f).SpecificHeatCapacity(798.1f)
+            .Tag(MoleculeTag.AcutelyToxic).Tag(MoleculeTag.OzoneDepleter)
+            .Build();
+
+        public static readonly Molecule Hydrogensulfate = Builder().ID("hydrogensulfate")
+            .Structure(Formula.Deserialize("linear:O=S(=O)(OH)O^-1"))
+            .Tag(MoleculeTag.AcidRain)
+            .Build();
+
+        public static readonly Molecule AceticAcid = Builder().ID("acetic_acid")
+            .Structure(Formula.Deserialize("linear:CC(=O)OH"))
+            .BoilingPoint(118.5f).Density(1049f).MolarHeatCapacity(123.1f)
+            .Tag(MoleculeTag.Smelly).Tag(MoleculeTag.Smog)
+            .Build();
+
+        public static readonly Molecule Acetate = Builder().ID("acetate")
+            .Structure(Formula.Deserialize("linear:CC~(~O^-0.5)O^-0.5"))
+            .Tag(MoleculeTag.Smelly).Tag(MoleculeTag.Smog)
+            .Build();
+
+        public static readonly Molecule Ammonium = Builder()
+            .ID("ammonium")
+            .Structure(Formula.CreateNewFormula(new Atom(Element.Nitrogen, 1))
+                .AddAtom(new Atom(Element.Hydrogen), move: false)
+                .AddAtom(new Atom(Element.Hydrogen), move: false)
+                .AddAtom(new Atom(Element.Hydrogen), move: false)
+                .AddAtom(new Atom(Element.Hydrogen), move: false))
+            .Build();
+        
+        public static readonly Molecule Ammonia = Builder()
+            .ID("ammonia")
+            .Structure(Formula.Deserialize("linear:N"))
+            .BoilingPoint(-33.34f)
+            .Density(900f) // Ammonium hydroxide has a density of ~0.9gcm^-3
+            .MolarHeatCapacity(80f)
+            .Tag(MoleculeTag.Refrigerant)
+            .Tag(MoleculeTag.Smelly)
+            .Build();
+        
+        public static readonly Molecule Sulfate = Builder().ID("sulfate")
+            .Structure(Formula.CreateNewFormula(new Atom(Element.Sulfur, 2))
+                .AddAtom(new Atom(Element.Oxygen, -1), move: false)
+                .AddAtom(new Atom(Element.Oxygen, -1), move: false)
+                .AddAtom(new Atom(Element.Oxygen, -1), move: false)
+                .AddAtom(new Atom(Element.Oxygen, -1), move: false)
+            ).Tag(MoleculeTag.AcidRain)
+            .Build();
     }
 }

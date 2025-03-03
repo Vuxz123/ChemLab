@@ -119,7 +119,7 @@ namespace com.ethnicthv.chemlab.engine.formula
             return ring;
         }
 
-        public Formula AddAtom(Atom newAtom, Bond.BondType bondType = Bond.BondType.Single)
+        public Formula AddAtom(Atom newAtom, Bond.BondType bondType = Bond.BondType.Single, bool move = true)
         {
             var currentAtomData = CheckAtomData(_currentAtom);
             if (currentAtomData.InRing)
@@ -127,7 +127,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                 throw new Exception("Cannot modify Atoms in cycle, use GetRings().AddBranch() instead");
             }
             
-            return AddAtomI(newAtom, bondType);
+            return AddAtomI(newAtom, bondType, move);
         }
 
         public Formula AddStructure(Formula structure, Bond.BondType bondType = Bond.BondType.Single)
@@ -173,7 +173,7 @@ namespace com.ethnicthv.chemlab.engine.formula
             return this;
         }
         
-        private Formula AddAtomI(Atom newAtom, Bond.BondType bondType = Bond.BondType.Single)
+        private Formula AddAtomI(Atom newAtom, Bond.BondType bondType = Bond.BondType.Single, bool move = true)
         {
             //Note: Check current state of the current top atom
             var currentAtomData = CheckAtomData(_currentAtom);
@@ -183,7 +183,10 @@ namespace com.ethnicthv.chemlab.engine.formula
             }
 
             FormulaHelper.AddAtomToStructure(_currentAtom, newAtom, _structure, bondType);
-            _currentAtom = newAtom;
+            if (move)
+            {
+                _currentAtom = newAtom;
+            }
 
             return this;
         }
@@ -680,7 +683,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                 var topologyAndFormula = FROWNSstring.Trim().Split(":");
                 if (topologyAndFormula.Length != 2)
                 {
-                    throw new Exception("Badly formatted FROWNS string '" +
+                    throw new FormulaDeserializationException("Badly formatted FROWNS string '" +
                                         FROWNSstring + "'. They should be in the format 'topology:chains'.");
                 }
 
@@ -749,6 +752,7 @@ namespace com.ethnicthv.chemlab.engine.formula
         {
             var formula = new Formula();
             var hasFormulaBeenInstantiated = false;
+            
             var nextAtomBond = Bond.BondType.Single;
 
             for (var i = 0; i < symbols.Count; ++i)
@@ -762,6 +766,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                 Dictionary<Formula, Bond.BondType> groupsToAdd = new();
                 var thisAtomBond = nextAtomBond;
                 string symbol;
+                
                 if (!symbols[i].Contains("("))
                 {
                     symbol = symbols[i];
@@ -769,6 +774,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                 else
                 {
                     var groupBond = FormulaHelper.TrailingBondType(symbols[i]);
+                    
                     symbol = symbols[i][..symbols[i].IndexOf('(')];
                     
                     var brackets = 1;
@@ -830,28 +836,33 @@ namespace com.ethnicthv.chemlab.engine.formula
                     symbol = symbol[..^1];
                 }
 
+                // Check for charge
                 var charge = 0.0f;
-                var symbolAndCharge = symbol.Split("\\^");
+                var symbolAndCharge = symbol.Split("^");
+                
                 if (symbolAndCharge.Length != 1)
                 {
                     symbol = symbolAndCharge[0];
                     charge = float.Parse(symbolAndCharge[1]);
                 }
 
+                // Check if this is a numbered R-Group
                 var lastChar = symbol[^1];
                 var rGroupNumber = 0;
                 if (char.IsDigit(lastChar))
                 {
                     symbol = symbol[..^1];
-                    rGroupNumber = int.Parse((lastChar - 48).ToString());
+                    rGroupNumber = int.Parse((lastChar - '0').ToString());
                 }
 
-                var atom = new Atom((Element)ElementProperty.GetElementProperty(symbol).AtomicNumber, charge)
+                var atom = new Atom(ElementProperty.GetElementProperty(symbol).GetElement(), charge)
                 {
                     RGroupNumber = rGroupNumber
                 };
+                
+                // Add the Atom to the Formula
                 if (hasFormulaBeenInstantiated)
-                {
+                { //if this is not the first Atom
                     formula.AddGroup(new Formula(atom), false, thisAtomBond);
                 }
                 else

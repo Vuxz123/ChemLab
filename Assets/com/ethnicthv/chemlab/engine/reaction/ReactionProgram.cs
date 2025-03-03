@@ -23,9 +23,6 @@ namespace com.ethnicthv.chemlab.engine.reaction
         
         public void CheckForReaction(ReactionContext context , in CustomList<IReactingReaction> results)
         {
-            //Note: Clear the old results list
-            results.Clear();
-            
             foreach (var reaction in _reactions)
             {
                 if (reaction is INeedReactantGroups needReactantGroups)

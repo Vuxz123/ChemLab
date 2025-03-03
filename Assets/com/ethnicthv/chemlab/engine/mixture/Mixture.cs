@@ -9,6 +9,7 @@ using com.ethnicthv.chemlab.engine.molecule.group;
 using com.ethnicthv.chemlab.engine.reaction;
 using com.ethnicthv.chemlab.engine.util;
 using com.ethnicthv.util;
+using NUnit.Framework;
 using UnityEngine;
 using Util = com.ethnicthv.chemlab.engine.mixture.MixtureUtil;
 
@@ -16,16 +17,19 @@ namespace com.ethnicthv.chemlab.engine.mixture
 {
     public class Mixture : IMixture
     {
+        private const float TicksPerSecond = 20;
         public static readonly float ImpurityThreshold = 0.1F;
 
         //Note: float is used to represent the number of moles of the element in mol in the mixture
         private readonly Dictionary<Molecule, float> _mixtureComposition = new();
         private readonly Dictionary<Molecule, float> _states = new();
 
+        private readonly Dictionary<Molecule, float> _solidMolecules = new();
+
         private readonly Dictionary<MoleculeGroup, List<Molecule>> _moleculeGroups = new();
 
         private readonly Dictionary<ReactionResult, float> _reactionResults = new();
-        private readonly CustomList<IReactingReaction> _possibleReaction = new();
+        private readonly List<IReactingReaction> _possibleReaction = new();
 
         private readonly List<Molecule> _novelMolecules = new();
 
@@ -41,6 +45,8 @@ namespace com.ethnicthv.chemlab.engine.mixture
 
         private bool _isMixtureChecked;
         private Color _color;
+        
+        private List<Molecule> _molecules; //Note: Cache the Molecules in the Mixture, remove each tick
 
         public static Mixture CreateMixture()
         {
@@ -119,12 +125,13 @@ namespace com.ethnicthv.chemlab.engine.mixture
 
         public void Tick()
         {
+            _molecules = null;
             if (!_isMixtureChecked)
             {
                 CheckMixture();
                 _isMixtureChecked = true;
             }
-
+            
             RunReactions();
         }
 
@@ -140,8 +147,10 @@ namespace com.ethnicthv.chemlab.engine.mixture
                 throw new Exception(
                     "Set Moles in Mixture must be greater than 0, if you want to remove a molecule, use RemoveMolecule()");
             }
+            
+            var composition2Mutate = molecule.IsSolid() ? _solidMolecules : _mixtureComposition;
 
-            if (!_mixtureComposition.ContainsKey(molecule))
+            if (!composition2Mutate.ContainsKey(molecule))
             {
                 Util.AddMolecule(molecule, moles,
                     _newMolecules, GetContent(), _states,
@@ -150,20 +159,22 @@ namespace com.ethnicthv.chemlab.engine.mixture
                 return;
             }
 
-            _mixtureComposition[molecule] = moles;
+            composition2Mutate[molecule] = moles;
         }
 
         public float GetMoles(Molecule molecule)
         {
             var t = GetContent();
-            return t.TryGetValue(molecule, out var value) ? value : 0;
+            return molecule.IsSolid() ? _solidMolecules.TryGetValue(molecule, out var valueSolid) ? valueSolid : 0 
+                            : t.TryGetValue(molecule, out var value) ? value : 0;
         }
 
         public float AddMoles(Molecule molecule, float moles, out bool isMutating)
         {
+            var isSolid = molecule.IsSolid();
             var t = Util.AddMoles(molecule, moles,
                 _newMolecules, _moleculesToRemove,
-                GetContent(), _states, _novelMolecules,
+                isSolid ? _solidMolecules :GetContent(), _states, _novelMolecules,
                 ref _isMixtureChecked);
             isMutating = _isMixtureChecked;
             return t;
@@ -177,6 +188,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
         public void ClearMixture()
         {
             _mixtureComposition.Clear();
+            _solidMolecules.Clear();
             _isMixtureChecked = false;
         }
 
@@ -199,23 +211,15 @@ namespace com.ethnicthv.chemlab.engine.mixture
         {
             Dictionary<Molecule, float> liquidMoles = new();
             Dictionary<Molecule, float> gasMoles = new();
-            Dictionary<Molecule, float> solidMoles = new();
 
             var newLiquidVolume = 0.0F;
             var newGasVolume = 1.0F;
 
             var liquidMixture = new Mixture();
             var gasMixture = new Mixture();
-            var solidMixture = new Mixture();
 
             foreach (var (molecule, concentration) in _mixtureComposition)
             {
-                if (_states[molecule] < 0)
-                {
-                    solidMoles[molecule] = concentration * initialVolume;
-                    continue;
-                }
-
                 var proportionGaseous = _states[molecule];
                 var molesOfLiquidMolecule = concentration * (1.0F - proportionGaseous) * initialVolume;
                 liquidMoles[molecule] = molesOfLiquidMolecule;
@@ -237,13 +241,6 @@ namespace com.ethnicthv.chemlab.engine.mixture
                 gasMixture._states[molecule] = 1.0F;
             }
 
-            foreach (var (molecule, resultMoles) in solidMoles)
-            {
-                if (resultMoles == 0.0F) continue;
-                solidMixture.AddMoles(molecule, resultMoles / initialVolume, out solidMixture._isMixtureChecked);
-                solidMixture._states[molecule] = -1.0F;
-            }
-
             foreach (var entry in _reactionResults)
             {
                 var resultMoles = entry.Value * initialVolume;
@@ -254,15 +251,12 @@ namespace com.ethnicthv.chemlab.engine.mixture
 
             liquidMixture._temperature = _temperature;
             gasMixture._temperature = _temperature;
-            solidMixture._temperature = _temperature;
             liquidMixture.CheckMixture();
             gasMixture.CheckMixture();
-            solidMixture.CheckMixture();
             liquidMixture._equilibrium = _equilibrium;
             gasMixture._equilibrium = _equilibrium;
-            solidMixture._equilibrium = _equilibrium;
 
-            return new Phases(gasMixture, newGasVolume, liquidMixture, newLiquidVolume, solidMixture);
+            return new Phases(gasMixture, newGasVolume, liquidMixture, newLiquidVolume);
         }
 
         public static Mixture Mix(Dictionary<Mixture, float> mixtures)
@@ -344,27 +338,42 @@ namespace com.ethnicthv.chemlab.engine.mixture
             float liquidConcentration;
             float energyRequiredToFullyBoil;
             float boiled;
-            if (temperatureChange > 0.0F)
+            if (temperatureChange > 0.0F) // If the temperature would be increasing
             {
-                if (_nextHigherBoilingPoint.Item2 != null && _temperature + temperatureChange >=
-                    _nextHigherBoilingPoint.Item1)
+                if (_nextHigherBoilingPoint.Item2 != null
+                    && _temperature + temperatureChange >= _nextHigherBoilingPoint.Item1)
                 {
-                    temperatureChange = _nextHigherBoilingPoint.Item1 - _temperature;
-                    _temperature += temperatureChange;
-                    energyDensity -= temperatureChange * volumetricHeatCapacity;
+                    // If a Molecule needs to boil before the temperature can change
+                    temperatureChange =
+                        _nextHigherBoilingPoint.Item1 -
+                        _temperature; // Only increase the temperature by enough to get to the next BP
+                    _temperature += temperatureChange; // Raise the Mixture to the boiling point
+                    energyDensity -=
+                        temperatureChange *
+                        volumetricHeatCapacity; // Energy leftover once the Mixture has been raised to the boiling point
                     molecule = _nextHigherBoilingPoint.Item2;
-                    liquidConcentration = GetMoles(molecule) * (1.0F - _states[molecule]);
-                    energyRequiredToFullyBoil = liquidConcentration * molecule.GetLatentHeat();
+                    liquidConcentration =
+                        GetMoles(molecule) * (1.0F - _states[molecule]); // The moles per bucket of liquid Molecules
+                    energyRequiredToFullyBoil =
+                        liquidConcentration *
+                        molecule.GetLatentHeat(); // The energy density required to boil all remaining liquid
+
                     if (energyDensity > energyRequiredToFullyBoil)
                     {
-                        _states[molecule] = 1;
+                        // If there is leftover energy once the Molecule has been boiled
+                        _states[molecule] = 1; // Convert the Molecule fully to gas
                         UpdateNextBoilingPoints(true);
-                        _boiling = false;
-                        Heat(energyDensity - energyRequiredToFullyBoil);
+                        _boiling =
+                            false; // If we're just increasing the temperature, then all Molecule are either fully gaseous or liquid
+                        Heat(energyDensity - energyRequiredToFullyBoil); // Continue heating
                     }
                     else
                     {
-                        boiled = energyDensity / (molecule.GetLatentHeat() * GetMoles(molecule));
+                        // If there is no leftover energy and the Molecule is still boiling
+                        boiled = energyDensity /
+                                 (molecule.GetLatentHeat() *
+                                  GetMoles(
+                                      molecule)); // The proportion of all of the Molecule which is additionally boiled
 
                         if (_states.ContainsKey(molecule))
                         {
@@ -375,31 +384,41 @@ namespace com.ethnicthv.chemlab.engine.mixture
                             _states[molecule] = boiled;
                         }
 
-                        _boiling = true;
+                        _boiling =
+                            true; // Set the fact that there is a Molecule which will be not fully gaseous or liquid
                     }
 
-                    _equilibrium = false;
+                    _equilibrium = false; // Equilibrium is broken when a Molecule boils
                 }
                 else
                 {
                     _temperature += temperatureChange;
                 }
-            }
+            } // If the temperature would be decreasing
             else if (_nextLowerBoilingPoint.Item2 != null &&
                      _temperature + temperatureChange < _nextLowerBoilingPoint.Item1)
             {
-                temperatureChange = _nextLowerBoilingPoint.Item1 - _temperature;
-                _temperature += temperatureChange;
-                energyDensity -= temperatureChange * volumetricHeatCapacity;
+                // If a Molecule needs to condense before the temperature can change
+                temperatureChange =
+                    _nextLowerBoilingPoint.Item1 -
+                    _temperature; // Only decrease the temperature by enough to get to the next condensation point
+                _temperature += temperatureChange; // Decrease the Mixture to the boiling point
+                energyDensity -=
+                    temperatureChange *
+                    volumetricHeatCapacity; // Additional energy once the Mixture has been lowered to the condensation point
+
                 molecule = _nextLowerBoilingPoint.Item2;
                 liquidConcentration = GetMoles(molecule) * _states[molecule];
-                energyRequiredToFullyBoil = liquidConcentration * molecule.GetLatentHeat();
+                energyRequiredToFullyBoil =
+                    liquidConcentration *
+                    molecule.GetLatentHeat(); // The energy density which could be released when all remaining gas is condensed
                 if (energyDensity < -energyRequiredToFullyBoil)
                 {
-                    _states[molecule] = 0;
+                    // If there is more energy that needs to be released than the condensation can supply
+                    _states[molecule] = 0; // Convert the Molecule fully to liquid
                     UpdateNextBoilingPoints(true);
-                    _boiling = false;
-                    Heat(energyDensity + energyRequiredToFullyBoil);
+                    _boiling = false; // If we're just increasing the temperature, then all Molecule are either fully gaseous or liquid
+                    Heat(energyDensity + energyRequiredToFullyBoil); // Continue cooling
                 }
                 else
                 {
@@ -413,10 +432,10 @@ namespace com.ethnicthv.chemlab.engine.mixture
                         _states[molecule] = 1.0F - boiled;
                     }
 
-                    _boiling = true;
+                    _boiling = true; // Set the fact that a Molecule is currently not fully gaseous or liquid
                 }
 
-                _equilibrium = false;
+                _equilibrium = false; // Equilibrium is broken when a Molecule condenses
             }
             else
             {
@@ -514,8 +533,19 @@ namespace com.ethnicthv.chemlab.engine.mixture
 
         #region Private Action
 
+        private float CalculateReactionRate(IReactingReaction reaction, ReactionContext context)
+        {
+            var rate = reaction.GetRateConstant(_temperature) / TicksPerSecond;
+            foreach (var molecule in reaction.GetOrders().Keys) {
+                rate *= (float)Math.Pow(GetMoles(molecule), reaction.GetOrders()[molecule]);
+            }
+            //if (reaction.NeedsUV()) rate *= context.UVPower;
+            return rate;
+        }
+
         private void CheckMixture()
         {
+            Debug.LogWarning("Checking Mixture");
             foreach (var molecule in _newMolecules)
             {
                 GroupDetectingProgram.Instance.CheckMolecule(molecule, out var groups);
@@ -526,18 +556,63 @@ namespace com.ethnicthv.chemlab.engine.mixture
                     AddToGroup(group, molecule);
                 }
             }
+            
+            _newMolecules.Clear();
+            _possibleReaction.Clear();
+            var newPossibleReactions = new CustomList<IReactingReaction>();
 
-            ReactionProgram.Instance.CheckForReaction(GetReactionContext(), in _possibleReaction);
+            //Note: Add Dynamic Reaction
+            ReactionProgram.Instance.CheckForReaction(GetReactionContext(), in newPossibleReactions);
+            
+            //Note: Add Static Reaction
+            foreach (var reaction in _mixtureComposition.Keys.SelectMany(possibleReactant => possibleReactant.GetReactantReactions()))
+            {
+                newPossibleReactions.Push(reaction);
+            }
+            
+            Debug.Log("New Possible Reactions: " + newPossibleReactions.GetList().Count);
+            Debug.Log(newPossibleReactions.GetList().Aggregate("", (current, reaction) => current + reaction.GetId() + "\n"));
+            
+            _possibleReaction.AddRange(newPossibleReactions.GetList());
         }
 
         private void RunReactions()
         {
+            var context = GetReactionContext();
+            _equilibrium = true; // Start by assuming we have reached equilibrium
+            
             Dictionary<Molecule, float> oldContents = new(_mixtureComposition);
-
-            //var reactionTickContext = GetReactionTickContext();
-            foreach (var r in _possibleReaction.GetList())
+            
+            Dictionary<IReactingReaction, float> reactionRates = new (); // Rates of all Reactions
+            List<IReactingReaction> orderedReactions = new (); // A list of Reactions in the order of their current rate, fastest first
+            
+            Debug.Log("Possible Reactions: " + _possibleReaction.Count);
+            Debug.Log(_possibleReaction.Aggregate("", (current, reaction) => current + reaction.GetId() + "\n"));
+            
+            foreach (var possibleReaction in _possibleReaction)
             {
-                var molesOfReaction = 0F;
+                var reactionHasAllReactants = true;
+                foreach (var necessaryReactantOrCatalyst in possibleReaction.GetOrders().Keys)
+                {
+                    if (GetMoles(necessaryReactantOrCatalyst) != 0) continue;
+                    reactionHasAllReactants = false;
+                    break;
+                }
+
+                if (!reactionHasAllReactants) continue;
+                reactionRates[possibleReaction] = CalculateReactionRate(possibleReaction, context); // Calculate the Reaction data for this sub-tick
+                orderedReactions.Add(possibleReaction); // Add the Reaction to the rate-ordered list, which is currently not sorted
+            };
+            
+            orderedReactions.Sort((a, b) => 
+                reactionRates[b].CompareTo(reactionRates[a])); // Sort the Reactions by their rate, fastest first
+            
+            Debug.Log("Ordered Reactions: " + orderedReactions.Count);
+            Debug.Log(orderedReactions.Aggregate("", (current, reaction) => current + reaction.GetId() + "\n"));
+            
+            foreach (var r in orderedReactions)
+            {
+                var molesOfReaction = reactionRates[r];
 
                 foreach (var reactant in r.GetReactants())
                 {
@@ -549,7 +624,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
                     }
                 }
 
-                if (!(molesOfReaction <= 0.0F))
+                if (molesOfReaction > 0.0F)
                 {
                     _isMixtureChecked |= DoReaction(r, molesOfReaction);
                 }
@@ -562,6 +637,19 @@ namespace com.ethnicthv.chemlab.engine.mixture
                     _equilibrium = false;
                 }
             }
+            
+            // Note: Remove _moleculesToRemove
+            
+            foreach (var molecule in _moleculesToRemove.Keys)
+            {
+                if (molecule.IsSolid())
+                {
+                    _solidMolecules.Remove(molecule);
+                    continue;
+                }
+                _mixtureComposition.Remove(molecule);
+            }
+            _moleculesToRemove.Clear();
         }
 
         private bool DoReaction(IReactingReaction reaction, float molesPerLiter)
@@ -605,21 +693,28 @@ namespace com.ethnicthv.chemlab.engine.mixture
             _nextHigherBoilingPoint = (float.MaxValue, null);
             _nextLowerBoilingPoint = (0, null);
             using var var2 = _mixtureComposition.Keys.GetEnumerator();
-            while(true) {
+            while (true)
+            {
                 Molecule molecule;
                 float bp;
-                do {
-                    if (!var2.MoveNext()) {
+                do
+                {
+                    if (!var2.MoveNext())
+                    {
                         return;
                     }
+
                     molecule = var2.Current;
                     bp = molecule!.GetBoilingPoint();
-                    if ((bp < _temperature || bp == _temperature && !ignoreCurrentTemperature) && bp > _nextLowerBoilingPoint.Item1) {
+                    if ((bp < _temperature || bp == _temperature && !ignoreCurrentTemperature) &&
+                        bp > _nextLowerBoilingPoint.Item1)
+                    {
                         _nextLowerBoilingPoint = (bp, molecule);
                     }
-                } while(!(bp > _temperature) && (bp != _temperature || ignoreCurrentTemperature));
+                } while (!(bp > _temperature) && (bp != _temperature || ignoreCurrentTemperature));
 
-                if (bp < _nextHigherBoilingPoint.Item1) {
+                if (bp < _nextHigherBoilingPoint.Item1)
+                {
                     _nextHigherBoilingPoint = (bp, molecule);
                 }
             }
@@ -636,7 +731,23 @@ namespace com.ethnicthv.chemlab.engine.mixture
 
         private ReactionContext GetReactionContext()
         {
-            return new ReactionContext(_moleculeGroups, _mixtureComposition);
+            //Note: Get full Mixture composition
+            
+            var contextComposition = new Dictionary<Molecule, float>(_mixtureComposition);
+            
+            foreach (var (molecule, value) in _solidMolecules)
+            {
+                if (contextComposition.ContainsKey(molecule))
+                {
+                    contextComposition[molecule] += value;
+                }
+                else
+                {
+                    contextComposition[molecule] = value;
+                }
+            }
+            
+            return new ReactionContext(_moleculeGroups, contextComposition);
         }
 
         #endregion
@@ -644,6 +755,15 @@ namespace com.ethnicthv.chemlab.engine.mixture
         private Dictionary<Molecule, float> GetContent()
         {
             return _mixtureComposition;
+        }
+
+        public IReadOnlyList<Molecule> GetMolecules()
+        {
+            if (_molecules != null) return _molecules;
+            //Note: Get all Molecules in the Mixture, includes solid Molecules
+            var molecules = new List<Molecule>(_mixtureComposition.Keys);
+            molecules.AddRange(_solidMolecules.Keys);
+            return molecules;
         }
     }
 }
