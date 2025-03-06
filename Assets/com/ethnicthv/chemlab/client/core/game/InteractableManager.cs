@@ -4,28 +4,23 @@ using UnityEngine;
 
 namespace com.ethnicthv.chemlab.client.core.game
 {
-    public class InteractableManager
+    public static class InteractableManager
     {
-        private static Dictionary<GameObject, IInteractable> _interactables = new Dictionary<GameObject, IInteractable>();
+        private static readonly Dictionary<GameObject, IInteractable> Interactable = new();
         
         public static void RegisterInteractable(GameObject gameObject, IInteractable interactable)
         {
-            _interactables.Add(gameObject, interactable);
+            Interactable.Add(gameObject, interactable);
         }
         
         public static void UnregisterInteractable(GameObject gameObject)
         {
-            _interactables.Remove(gameObject);
-        }
-        
-        public static IInteractable GetInteractable(GameObject gameObject)
-        {
-            return _interactables[gameObject];
+            Interactable.Remove(gameObject);
         }
         
         public static bool TryGetInteractable(GameObject gameObject, out IInteractable interactable)
         {
-            return _interactables.TryGetValue(gameObject, out interactable);
+            return Interactable.TryGetValue(gameObject, out interactable);
         }
     }
 }

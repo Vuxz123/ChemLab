@@ -17,5 +17,7 @@ namespace com.ethnicthv.chemlab.client.api.core.game
         Transform GetMainTransform();
 
         void OnDrop(GameObject other);
+        
+        List<(string name, Action onClick)> GetDropOptions(GameObject other);
     }
 }

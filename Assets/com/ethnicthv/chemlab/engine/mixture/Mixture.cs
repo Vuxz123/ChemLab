@@ -29,7 +29,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
         private readonly Dictionary<MoleculeGroup, List<Molecule>> _moleculeGroups = new();
 
         private readonly Dictionary<ReactionResult, float> _reactionResults = new();
-        private readonly List<IReactingReaction> _possibleReaction = new();
+        private readonly LinkedList<IReactingReaction> _possibleReaction = new();
 
         private readonly List<Molecule> _novelMolecules = new();
 
@@ -106,6 +106,11 @@ namespace com.ethnicthv.chemlab.engine.mixture
             }
 
             return this;
+        }
+        
+        public float GetTemperature()
+        {
+            return _temperature;
         }
 
         public void SetState(Molecule molecule, float state)
@@ -573,7 +578,11 @@ namespace com.ethnicthv.chemlab.engine.mixture
             Debug.Log("New Possible Reactions: " + newPossibleReactions.GetList().Count);
             Debug.Log(newPossibleReactions.GetList().Aggregate("", (current, reaction) => current + reaction.GetId() + "\n"));
             
-            _possibleReaction.AddRange(newPossibleReactions.GetList());
+            foreach (var possibleReaction in newPossibleReactions.GetList())
+            {
+                if (possibleReaction.GetOrders().Keys.Any(necessaryReactantOrCatalyst => GetMoles(necessaryReactantOrCatalyst) == 0)) continue; // Skip Reactions which require a reactant or catalyst which is not present
+                _possibleReaction.AddLast(possibleReaction);
+            }
         }
 
         private void RunReactions()
@@ -586,29 +595,15 @@ namespace com.ethnicthv.chemlab.engine.mixture
             Dictionary<IReactingReaction, float> reactionRates = new (); // Rates of all Reactions
             List<IReactingReaction> orderedReactions = new (); // A list of Reactions in the order of their current rate, fastest first
             
-            Debug.Log("Possible Reactions: " + _possibleReaction.Count);
-            Debug.Log(_possibleReaction.Aggregate("", (current, reaction) => current + reaction.GetId() + "\n"));
-            
             foreach (var possibleReaction in _possibleReaction)
             {
-                var reactionHasAllReactants = true;
-                foreach (var necessaryReactantOrCatalyst in possibleReaction.GetOrders().Keys)
-                {
-                    if (GetMoles(necessaryReactantOrCatalyst) != 0) continue;
-                    reactionHasAllReactants = false;
-                    break;
-                }
-
-                if (!reactionHasAllReactants) continue;
+                if (possibleReaction.GetOrders().Keys.Any(necessaryReactantOrCatalyst => GetMoles(necessaryReactantOrCatalyst) == 0)) continue; // Skip Reactions which require a reactant or catalyst which is not present
                 reactionRates[possibleReaction] = CalculateReactionRate(possibleReaction, context); // Calculate the Reaction data for this sub-tick
                 orderedReactions.Add(possibleReaction); // Add the Reaction to the rate-ordered list, which is currently not sorted
-            };
+            }
             
             orderedReactions.Sort((a, b) => 
                 reactionRates[b].CompareTo(reactionRates[a])); // Sort the Reactions by their rate, fastest first
-            
-            Debug.Log("Ordered Reactions: " + orderedReactions.Count);
-            Debug.Log(orderedReactions.Aggregate("", (current, reaction) => current + reaction.GetId() + "\n"));
             
             foreach (var r in orderedReactions)
             {

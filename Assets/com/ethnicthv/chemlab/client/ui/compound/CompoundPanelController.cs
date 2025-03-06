@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using com.ethnicthv.chemlab.client.api.ui.compound;
 using com.ethnicthv.chemlab.client.core.renderer;
 using com.ethnicthv.chemlab.engine.api.molecule;
@@ -16,7 +17,12 @@ namespace com.ethnicthv.chemlab.client.ui.compound
         private IMolecule _molecule2Display;
         
         private Coroutine _centerRenderedMoleculeCoroutine;
-        
+
+        private void Start()
+        {
+            gameObject.SetActive(false);
+        }
+
         public void ClosePanel()
         {
             gameObject.SetActive(false);

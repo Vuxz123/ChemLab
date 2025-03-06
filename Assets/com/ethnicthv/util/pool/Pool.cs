@@ -15,11 +15,7 @@ namespace com.ethnicthv.util.pool
 
         public T Get()
         {
-            if (_pool.Count > 0)
-            {
-                return _pool.Pop();
-            }
-            return _factory();
+            return _pool.Count > 0 ? _pool.Pop() : _factory();
         }
 
         public void Return(T obj)

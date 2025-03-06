@@ -69,44 +69,6 @@ namespace TestScript
             _mixture = Mixture.Mix(mixtures);
             
             bottleBehaviour.SetMixture(_mixture);
-            
-            UpdateRenderEntity();
-        }
-        
-        private int _currentFormula;
-        
-        public void UpdateRenderEntity()
-        {
-            var molecules = _mixture.GetMolecules();
-            var molecule = molecules[_currentFormula];
-            
-            UIManager.Instance.CompoundPanelController.SetDisplayedMolecule(molecule);
-        }
-        
-        public void NextFormula()
-        {
-            var molecules = _mixture.GetMolecules();
-            _currentFormula = (_currentFormula + 1) % molecules.Count;
-            UpdateRenderEntity();
-        }
-        
-        public void PreviousFormula()
-        {
-            var molecules = _mixture.GetMolecules();
-            _currentFormula = (_currentFormula - 1 + molecules.Count) % molecules.Count;
-            UpdateRenderEntity();
-        }
-
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.RightArrow))
-            {
-                NextFormula();
-            }
-            else if (Input.GetKeyDown(KeyCode.LeftArrow))
-            {
-                PreviousFormula();
-            }
         }
     }
 }

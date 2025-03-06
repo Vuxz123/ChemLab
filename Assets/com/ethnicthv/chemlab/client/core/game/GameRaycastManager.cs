@@ -3,9 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using com.ethnicthv.assets.input;
 using com.ethnicthv.chemlab.client.api.core.game;
+using com.ethnicthv.chemlab.client.ui;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Serialization;
+using UnityEngine.InputSystem;
 
 namespace com.ethnicthv.chemlab.client.core.game
 {
@@ -18,10 +19,13 @@ namespace com.ethnicthv.chemlab.client.core.game
         [SerializeField] private float dragVelocity = 10;
         [SerializeField] private LayerMask draggableLayer;
         [SerializeField] private LayerMask tableLayer;
-
+        
         public event Action<RaycastHit> OnRaycastHit = delegate { };
 
         private GameInteract _gameInteract;
+
+        private bool _isLeftPointerOverGameObject = false;
+        private bool _isRightPointerOverGameObject = false;
 
 #if UNITY_EDITOR
         private readonly Queue<Vector3> _debugRaycastHits = new();
@@ -48,6 +52,19 @@ namespace com.ethnicthv.chemlab.client.core.game
             _skipFrames = skipFixedFrames;
         }
 
+        private void Update()
+        {
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                _isLeftPointerOverGameObject = EventSystem.current.IsPointerOverGameObject(PointerInputModule.kMouseLeftId);
+            }
+
+            if (Mouse.current.rightButton.wasPressedThisFrame)
+            {
+                _isRightPointerOverGameObject = EventSystem.current.IsPointerOverGameObject(PointerInputModule.kMouseRightId);
+            }
+        }
+
         private void FixedUpdate()
         {
             if (_skipFrames > 0)
@@ -58,7 +75,7 @@ namespace com.ethnicthv.chemlab.client.core.game
 
             _skipFrames = skipFixedFrames;
 
-            if (EventSystem.current.IsPointerOverGameObject()) return;
+            if (EventSystem.current.IsPointerOverGameObject(PointerInputModule.kMouseLeftId)) return;
             var ray = ClientManager.Instance.mainCamera.ScreenPointToRay(Input.mousePosition);
             if (!Physics.Raycast(ray, out var hit)) return;
 
@@ -67,7 +84,10 @@ namespace com.ethnicthv.chemlab.client.core.game
 
         private void OnLeftClick()
         {
-            if (EventSystem.current.IsPointerOverGameObject()) return;
+            //Note: Close the options panel if it is open
+            UIManager.Instance.OptionsPanelController.ClosePanel();
+            
+            if (_isLeftPointerOverGameObject) return;
 
             var ray = ClientManager.Instance.mainCamera.ScreenPointToRay(Input.mousePosition);
 
@@ -89,7 +109,7 @@ namespace com.ethnicthv.chemlab.client.core.game
 
         private void OnRightClick()
         {
-            if (EventSystem.current.IsPointerOverGameObject()) return;
+            if (_isRightPointerOverGameObject) return;
 
             var ray = ClientManager.Instance.mainCamera.ScreenPointToRay(Input.mousePosition);
 
@@ -112,30 +132,59 @@ namespace com.ethnicthv.chemlab.client.core.game
         private void OpenOptionsPanel(IInteractable interactable)
         {
             var options = interactable.GetOptions();
-            //TODO: Open options panel
+            if (options == null) return;
+            
+            UIManager.Instance.OptionsPanelController.SetupOptions(options, Mouse.current.position.value);
+            UIManager.Instance.OptionsPanelController.OpenPanel();
+        }
+        
+        private void OpenDropOptionsPanel(IInteractable interactable, GameObject other)
+        {
+            var options = interactable.GetDropOptions(other);
+            if (options == null) return;
+            
+            UIManager.Instance.OptionsPanelController.SetupOptions(options, Mouse.current.position.value);
+            UIManager.Instance.OptionsPanelController.OpenPanel();
         }
 
         private Coroutine _dragCoroutine;
         private Vector3 _velocity = Vector3.zero;
         private IInteractable _dragInteractable;
+        private GameObject _dragGameObject;
+        private int _originalLayer;
 
         private void OnDragStart()
         {
-            if (EventSystem.current.IsPointerOverGameObject()) return;
+            if (_isLeftPointerOverGameObject) return;
 
             var ray = ClientManager.Instance.mainCamera.ScreenPointToRay(Input.mousePosition);
             if (!Physics.Raycast(ray, out var hit, maxDistance: Mathf.Infinity, layerMask: draggableLayer)) return;
 
-            if (!InteractableManager.TryGetInteractable(hit.collider.gameObject, out var interactable)) return;
-
+            var colliderGameObject = hit.collider.gameObject;
+            
+            if (!InteractableManager.TryGetInteractable(colliderGameObject, out var interactable)) return;
+            
+            //Note: change layer of the interactable to prevent raycast from hitting it to
+            _originalLayer = colliderGameObject.layer;
+            colliderGameObject.layer = LayerMask.NameToLayer("Ignore Raycast");
+            
             _dragInteractable = interactable;
-            _dragCoroutine = StartCoroutine(DragCoroutine(interactable));
+            _dragGameObject = colliderGameObject;
+            _dragCoroutine = StartCoroutine(DragCoroutine(colliderGameObject, interactable));
         }
 
-        private IEnumerator DragCoroutine(IInteractable interactable)
+        private IEnumerator DragCoroutine(GameObject go, IInteractable interactable)
         {
             while (true)
             {
+                if (EventSystem.current.IsPointerOverGameObject(PointerInputModule.kMouseLeftId))
+                {
+                    go.layer = _originalLayer;
+                    _dragCoroutine = null;
+                    OnDragEnd();
+                    yield break;
+                }
+                
                 var ray = ClientManager.Instance.mainCamera.ScreenPointToRay(Input.mousePosition);
                 var interactableTransform = interactable.GetMainTransform();
                 var newPosition = interactable.GetMainTransform().position;
@@ -160,11 +209,14 @@ namespace com.ethnicthv.chemlab.client.core.game
                 if (Physics.Raycast(ray, out var hit, maxDistance: Mathf.Infinity, layerMask: draggableLayer))
                 {
                     other = hit.collider.gameObject;
+                    OpenDropOptionsPanel(_dragInteractable, other);
                 }
                 _dragInteractable.OnDrop(other);
+                _dragGameObject.layer = _originalLayer;
             }
-            _dragCoroutine = null;
             _dragInteractable = null;
+            _dragGameObject = null;
+            _dragCoroutine = null;
         }
 
 #if UNITY_EDITOR

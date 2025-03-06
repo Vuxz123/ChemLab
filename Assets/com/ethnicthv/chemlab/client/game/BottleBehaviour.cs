@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using com.ethnicthv.chemlab.client.api.core.game;
 using com.ethnicthv.chemlab.client.chemistry;
 using com.ethnicthv.chemlab.client.core.game;
+using com.ethnicthv.chemlab.client.ui;
 using com.ethnicthv.chemlab.engine;
 using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.api.mixture;
@@ -20,6 +21,7 @@ namespace com.ethnicthv.chemlab.client.game
         [SerializeField] private Transform fillersParent;
         
         private Mixture _contents;
+        private float _volumn;
 
         private readonly Dictionary<SpriteRenderer, LiquidPart> _fillerParts = new();
         
@@ -85,7 +87,12 @@ namespace com.ethnicthv.chemlab.client.game
 
         public List<(string name, Action onClick)> GetOptions()
         {
-            return new List<(string name, Action onClick)>();
+            return new List<(string name, Action onClick)>()
+            {
+                ("View Content", ViewContent),
+                ("test2", () => Debug.Log("test2")),
+                ("test3", () => Debug.Log("test3"))
+            };
         }
 
         public void OnHover()
@@ -108,6 +115,26 @@ namespace com.ethnicthv.chemlab.client.game
             Debug.Log("Dropped on " + other.name);
         }
 
+        public List<(string name, Action onClick)> GetDropOptions(GameObject other)
+        {
+            return new List<(string name, Action onClick)>()
+            {
+                ("test1", () => Debug.Log("test1: " + other.name)),
+                ("test2", () => Debug.Log("test2: " + other.name)),
+                ("test3", () => Debug.Log("test3: " + other.name))
+            };
+        }
+
+        public float GetVolumn()
+        {
+            return _volumn;
+        }
+
+        public void SetVolumn(float volumn)
+        {
+            _volumn = volumn;
+        }
+
         public Mixture GetMixture()
         {
             return _contents;
@@ -119,9 +146,27 @@ namespace com.ethnicthv.chemlab.client.game
             UpdateLiquidContent();
         }
 
+        public void SetMixtureAndVolumn(Mixture mixture, float volumn)
+        {
+            SetMixture(mixture);
+            SetVolumn(volumn);
+        }
+
+        public (Mixture mixture, float volumn) GetMixtureAndVolumn()
+        {
+            return (_contents, _volumn);
+        }
+
         public void Tick()
         {
             _contents?.Tick();
+        }
+
+        private void ViewContent()
+        {
+            Debug.LogWarning("Open view Content");
+            UIManager.Instance.ContentPanelController.SetupMixtureToDisplay(_contents, _volumn);
+            UIManager.Instance.ContentPanelController.OpenPanel();
         }
     }
 }
