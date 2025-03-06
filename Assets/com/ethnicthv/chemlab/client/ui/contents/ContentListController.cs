@@ -22,12 +22,11 @@ namespace com.ethnicthv.chemlab.client.ui.contents
         private OrderedDictionary _moleculeAmounts;
         
         private Pool<IContentListItemController> _itemPool;
-        private Queue<IContentListItemController> _activeItems;
+        private readonly Dictionary<Molecule, IContentListItemController> _activeItems = new();
         
         private void Awake()
         {
             _itemPool = new Pool<IContentListItemController>(Factory);
-            _activeItems = new Queue<IContentListItemController>();
         }
 
         private void OnEnable()
@@ -38,46 +37,88 @@ namespace com.ethnicthv.chemlab.client.ui.contents
         private void OnDisable()
         {
             ChemicalTickerHandler.RemoveTicker(this);
+            Reset();
+        }
+
+        private void Reset()
+        {
             _mixture = null;
+            _moleculeAmounts = null;
+            var l = new List<Molecule>(_activeItems.Keys);
+            foreach (var key in l)
+            {
+                _itemPool.Return(_activeItems[key]);
+                _activeItems.Remove(key);
+            }
+            UpdateHeight(0);
         }
 
         public void Setup(IMixture mixture, float volumn)
         {
+            Reset();
             _mixture = mixture;
             _volumn = volumn;
+            
             if (_mixture == null) return;
             _moleculeAmounts = new OrderedDictionary();
 
             foreach (var (molecule, moles) in mixture.GetMixtureComposition())
             {
-                _moleculeAmounts[molecule] = moles;
+                _moleculeAmounts.Add(molecule, moles);
             }
             
             UpdateList();
         }
 
-        public void UpdateList()
+        private void UpdateList()
         {
-            while (_activeItems.TryDequeue(out var item))
+            var mixtureComposition = _mixture.GetMixtureComposition();
+            foreach (Molecule molecule in _moleculeAmounts.Keys)
             {
-                _itemPool.Return(item);
+                if (mixtureComposition.ContainsKey(molecule)) continue;
+                _moleculeAmounts.Remove(molecule);
+                _itemPool.Return(_activeItems[molecule]);
+                _activeItems.Remove(molecule);
             }
 
-            var newDict = _mixture.GetMixtureComposition();
-            foreach (var (molecule, mole) in newDict)
+            foreach (var (molecule, moles) in mixtureComposition)
             {
-                _moleculeAmounts[molecule] = mole;
+                if (_moleculeAmounts.Contains(molecule))
+                {
+                    _moleculeAmounts[molecule] = moles;
+                }
+                else
+                {
+                    _moleculeAmounts.Add(molecule, moles);
+                }
             }
+
+            var height = 0;
             
             foreach (Molecule molecule in _moleculeAmounts.Keys)
             {
-                var mole = (float) _moleculeAmounts[molecule];
-                var item = _itemPool.Get();
-                item.Setup(molecule, _volumn * mole);
-                _activeItems.Enqueue(item);
+                if (_activeItems.TryGetValue(molecule, out var activeItem))
+                {
+                    activeItem.Setup(molecule, (float)_moleculeAmounts[molecule] * _volumn);
+                }
+                else
+                {
+                    var item = _itemPool.Get();
+                    item.Setup(molecule, (float) _moleculeAmounts[molecule] * _volumn);
+                    _activeItems.Add(molecule, item);
+                }
+                
+                height += _activeItems[molecule].GetHeight();
             }
+            
+            UpdateHeight(height);
         }
-        
+
+        private void UpdateHeight(int height)
+        {
+            itemContainer.sizeDelta = new Vector2(itemContainer.sizeDelta.x, height);
+        }
+
         private IContentListItemController Factory()
         {
             var item = Instantiate(contentListItemPrefab, itemContainer).GetComponent<ContentListItemController>();

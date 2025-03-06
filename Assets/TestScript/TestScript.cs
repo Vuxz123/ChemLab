@@ -69,6 +69,7 @@ namespace TestScript
             _mixture = Mixture.Mix(mixtures);
             
             bottleBehaviour.SetMixture(_mixture);
+            bottleBehaviour.SetVolumn(1);
         }
     }
 }

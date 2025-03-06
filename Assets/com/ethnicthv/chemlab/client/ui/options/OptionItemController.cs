@@ -29,7 +29,7 @@ namespace com.ethnicthv.chemlab.client.ui.options
         public void Setup(string option, Action action)
         {
             gameObject.SetActive(true);
-            transform.SetAsFirstSibling();
+            transform.SetAsLastSibling();
             text.text = option;
             _action = action;
         }

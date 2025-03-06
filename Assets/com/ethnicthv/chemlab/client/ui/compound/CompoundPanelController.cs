@@ -30,8 +30,9 @@ namespace com.ethnicthv.chemlab.client.ui.compound
 
         public void OpenPanel()
         {
-            gameObject.SetActive(false);
+            gameObject.SetActive(true);
             gameObject.transform.SetAsLastSibling();
+            _centerRenderedMoleculeCoroutine = StartCoroutine(CenterRenderedMoleculeCoroutine());
         }
         
         public void SetDisplayedMolecule(IMolecule molecule)
@@ -51,7 +52,6 @@ namespace com.ethnicthv.chemlab.client.ui.compound
             {
                 StopCoroutine(_centerRenderedMoleculeCoroutine);
             }
-            _centerRenderedMoleculeCoroutine = StartCoroutine(CenterRenderedMoleculeCoroutine());
         }
         
         private IEnumerator CenterRenderedMoleculeCoroutine()

@@ -32,6 +32,7 @@ namespace com.ethnicthv.chemlab.client.ui.compound
             elementColor.color = color;
             elementName.text = ElementProperty.GetElementProperty(element).GetName();
             gameObject.SetActive(true);
+            gameObject.transform.SetAsFirstSibling();
         }
 
         public void OnPointerEnter(PointerEventData eventData)

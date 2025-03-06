@@ -164,7 +164,6 @@ namespace com.ethnicthv.chemlab.client.game
 
         private void ViewContent()
         {
-            Debug.LogWarning("Open view Content");
             UIManager.Instance.ContentPanelController.SetupMixtureToDisplay(_contents, _volumn);
             UIManager.Instance.ContentPanelController.OpenPanel();
         }

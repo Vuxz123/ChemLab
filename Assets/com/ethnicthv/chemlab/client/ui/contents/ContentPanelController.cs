@@ -24,7 +24,6 @@ namespace com.ethnicthv.chemlab.client.ui.contents
 
         public void OpenPanel()
         {
-            Debug.LogWarning("Open Contents");
             gameObject.SetActive(true);
             gameObject.transform.SetAsLastSibling();
         }
@@ -45,7 +44,9 @@ namespace com.ethnicthv.chemlab.client.ui.contents
             }
             var temperature = mixture.GetTemperature();
             var celsiusDegree = temperature - 273.15f;
-            temperatureText.text = $"Nhiệt độ: {celsiusDegree}°C";
+            var roundedCelsiusDegree = Math.Round(celsiusDegree, 2);
+            //Note: round to 2 decimal places
+            temperatureText.text = $"Nhiệt độ: {roundedCelsiusDegree}°C"; 
         }
 
         private void SetVolumnText(float volumn)
@@ -55,7 +56,9 @@ namespace com.ethnicthv.chemlab.client.ui.contents
                 volumnText.text = "Dung tích: rỗng!";
                 return;
             }
-            volumnText.text = volumn < 1 ? $"Dung tích: {volumn * 1000} mL" : $"{volumn} L";
+            volumnText.text = volumn < 1 ? 
+                $"Dung tích: {Mathf.Round(volumn * 1000)} mL" : 
+                $"Dung tích: {Mathf.Round(volumn)} L";
         }
     }
 }

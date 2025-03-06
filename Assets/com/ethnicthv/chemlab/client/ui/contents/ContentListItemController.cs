@@ -23,16 +23,25 @@ namespace com.ethnicthv.chemlab.client.ui.contents
         
         public void ResetInstance()
         {
+            _molecule = null;
             gameObject.SetActive(false);
         }
 
         public void Setup(IMolecule molecule, float moles)
         {
+            _molecule = molecule;
             gameObject.SetActive(true);
+            gameObject.transform.SetAsLastSibling();
             moleculeNameText.text = molecule.GetTranslationKey(false);
             molesText.text = moles.ToString(CultureInfo.InvariantCulture);
         }
-        
+
+        public int GetHeight()
+        {
+            var rt = (RectTransform) transform;
+            return (int) rt.sizeDelta.y;
+        }
+
         public void OnPointerEnter(PointerEventData eventData)
         {
             background.DOKill();
@@ -47,6 +56,11 @@ namespace com.ethnicthv.chemlab.client.ui.contents
         
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (_molecule == null)
+            {
+                Debug.LogError("Molecule is null");
+                return;
+            }
             UIManager.Instance.CompoundPanelController.SetDisplayedMolecule(_molecule);
             UIManager.Instance.CompoundPanelController.OpenPanel();
         }
