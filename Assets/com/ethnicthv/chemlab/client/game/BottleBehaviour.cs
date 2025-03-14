@@ -3,40 +3,60 @@ using System.Collections.Generic;
 using com.ethnicthv.chemlab.client.api.core.game;
 using com.ethnicthv.chemlab.client.chemistry;
 using com.ethnicthv.chemlab.client.core.game;
+using com.ethnicthv.chemlab.client.game.util;
 using com.ethnicthv.chemlab.client.ui;
 using com.ethnicthv.chemlab.engine;
 using com.ethnicthv.chemlab.engine.api;
-using com.ethnicthv.chemlab.engine.api.mixture;
 using com.ethnicthv.chemlab.engine.mixture;
-using com.ethnicthv.chemlab.engine.molecule;
+using com.ethnicthv.util.pool;
 using UnityEngine;
+using Environment = com.ethnicthv.chemlab.client.core.game.Environment;
 
 namespace com.ethnicthv.chemlab.client.game
 {
-    public class BottleBehaviour : MonoBehaviour, IInteractable, IMixtureContainer, IChemicalTicker
+    public class BottleBehaviour : MonoBehaviour, IInstrument, IInteractable, IMixtureContainer, IChemicalTicker,
+        IHeatable
     {
+        // The thermal conductance (in watts per kelvin) of the area of this Vat.
+        [SerializeField] private float heatConductivity = 1000f;
         [SerializeField] private float maxVolume = 1f;
         [SerializeField] private GameObject fillerPrefab;
         [SerializeField] private List<SpriteRenderer> fillers;
         [SerializeField] private Transform fillersParent;
-        
+
+        private float _heatPower;
+        private IHeater _heater;
+
+        private Mixture _tickGasMixture;
         private Mixture _contents;
-        private float _volumn;
+        private float _volume;
 
         private readonly Dictionary<SpriteRenderer, LiquidPart> _fillerParts = new();
-        
+
+        private GameObjectPool<SpriteRenderer> _fillerPool;
+
         private static readonly int FillThreshold = Shader.PropertyToID("_FillThreshold");
         private static readonly int Fill = Shader.PropertyToID("_Fill");
+        private static readonly int FillerUpperBound = Shader.PropertyToID("_FillUpperBound");
+
+        private void Awake()
+        {
+            _fillerPool = new GameObjectPool<SpriteRenderer>(CreateFiller, ResetFiller);
+        }
 
         private void OnEnable()
         {
+            InstrumentManager.AddInstrument(gameObject, this);
             InteractableManager.RegisterInteractable(gameObject, this);
+            MixtureContainerManager.RegisterMixtureContainer(gameObject, this);
             ChemicalTickerHandler.AddTicker(this);
         }
 
         private void OnDisable()
         {
+            InstrumentManager.RemoveInstrument(gameObject);
             InteractableManager.UnregisterInteractable(gameObject);
+            MixtureContainerManager.UnregisterMixtureContainer(gameObject);
             ChemicalTickerHandler.RemoveTicker(this);
         }
 
@@ -47,15 +67,36 @@ namespace com.ethnicthv.chemlab.client.game
             return filler.GetComponent<SpriteRenderer>();
         }
 
+        private static void ResetFiller(SpriteRenderer filler)
+        {
+            filler.material.SetFloat(Fill, 0);
+            filler.material.SetFloat(FillThreshold, 0);
+            filler.gameObject.SetActive(false);
+        }
+
+        private void ResetLiquidDisplay()
+        {
+            foreach (var f in fillers)
+            {
+                _fillerPool.Return(f);
+            }
+        }
+
         private void UpdateLiquidContent()
         {
-            var phases = _contents.SeparatePhases(maxVolume);
+            ResetLiquidDisplay();
+            if (_contents == null || _volume <= 0) return;
+            var phases = _contents.SeparatePhases(_volume);
             phases.LiquidMixture.UpdateColor();
+
             var color = phases.LiquidMixture.GetColor();
-            var fill = phases.LiquidVolume / maxVolume;
-            LiquidPart part = new LiquidPart {height = fill, color = color};
-            _fillerParts[CreateFiller()] = part;
-            
+
+            var fill = _volume / maxVolume;
+
+            LiquidPart part = new LiquidPart { height = fill, color = color };
+
+            _fillerParts[_fillerPool.Get()] = part;
+
             UpdateLiquidDisplay();
         }
 
@@ -73,11 +114,35 @@ namespace com.ethnicthv.chemlab.client.game
             }
         }
 
-        private void UpdateFiller(SpriteRenderer display, float fillAmount, float threshold, Color color)
+        private static void UpdateFiller(SpriteRenderer display, float fillAmount, float threshold, Color color)
         {
-            display.material.SetFloat(Fill, fillAmount);
+            var upperBound = 0.797f;
             display.material.SetFloat(FillThreshold, threshold);
+            display.material.SetFloat(Fill, fillAmount);
+            display.material.SetFloat(FillerUpperBound, upperBound);
             display.color = color;
+            display.gameObject.SetActive(true);
+        }
+
+        public void SetHeatPower(float heatPower)
+        {
+            _heatPower = heatPower;
+        }
+
+        public bool IsHeating()
+        {
+            return _heatPower > 0;
+        }
+
+        public bool IsAttachedToHeater(out IHeater heater)
+        {
+            heater = _heater;
+            return heater != null;
+        }
+        
+        public void SetHeater(IHeater heater)
+        {
+            _heater = heater;
         }
 
         public void OnInteract()
@@ -87,12 +152,17 @@ namespace com.ethnicthv.chemlab.client.game
 
         public List<(string name, Action onClick)> GetOptions()
         {
-            return new List<(string name, Action onClick)>()
+            var options = new List<(string name, Action onClick)>
             {
-                ("View Content", ViewContent),
-                ("test2", () => Debug.Log("test2")),
-                ("test3", () => Debug.Log("test3"))
+                ("View content", ViewContent),
             };
+            
+            if (IsAttachedToHeater(out var heater))
+            {
+                options.Add(("Detach from heater", () => HeatingUtil.DetachHeater(this, heater)));
+            }
+            
+            return options;
         }
 
         public void OnHover()
@@ -117,55 +187,125 @@ namespace com.ethnicthv.chemlab.client.game
 
         public List<(string name, Action onClick)> GetDropOptions(GameObject other)
         {
-            return new List<(string name, Action onClick)>()
+            if (other == null) return null;
+            
+            if (InstrumentManager.TryGetInstrument(other, out var otherInstrument))
             {
-                ("test1", () => Debug.Log("test1: " + other.name)),
-                ("test2", () => Debug.Log("test2: " + other.name)),
-                ("test3", () => Debug.Log("test3: " + other.name))
+                if (otherInstrument is IHeater heater)
+                {
+                    Debug.Log("Dropped on heater");
+                    return new List<(string name, Action onClick)>()
+                    {
+                        ("Attach to heater", () => HeatingUtil.AttachHeater(this, heater))
+                    };
+                }
+            }
+            
+            if (!MixtureContainerManager.TryGetMixtureContainer(other, out var mixtureContainer)) return null;
+            
+            var options = new List<(string name, Action onClick)>()
+            {
+                ("Pour All", () => PourAll(this, mixtureContainer)),
+                ("Pour", () => Pour(this, mixtureContainer)),
             };
+
+            return options;
         }
 
-        public float GetVolumn()
+        public float GetVolume()
         {
-            return _volumn;
+            return _volume;
         }
 
-        public void SetVolumn(float volumn)
+        public void SetVolume(float volume)
         {
-            _volumn = volumn;
+            _volume = volume;
         }
 
         public Mixture GetMixture()
         {
             return _contents;
         }
-        
+
         public void SetMixture(Mixture mixture)
         {
             _contents = mixture;
-            UpdateLiquidContent();
         }
 
-        public void SetMixtureAndVolumn(Mixture mixture, float volumn)
+        public void SetMixtureAndVolume(Mixture mixture, float volume)
         {
+            SetVolume(volume);
             SetMixture(mixture);
-            SetVolumn(volumn);
         }
 
-        public (Mixture mixture, float volumn) GetMixtureAndVolumn()
+        public (Mixture mixture, float volume) GetMixtureAndVolume()
         {
-            return (_contents, _volumn);
+            return (_contents, _volume);
+        }
+
+        public bool IsEmpty()
+        {
+            return _contents == null || _volume <= 0;
+        }
+
+        public void Clear()
+        {
+            SetMixtureAndVolume(null, 0);
         }
 
         public void Tick()
         {
-            _contents?.Tick();
+            if (_contents != null)
+            {
+                // Note: Calculate the heat that is transferred to the mixture
+                var heat = _heatPower;
+                heat += (Environment.Instance.Temperature - _contents.GetTemperature()) *
+                        heatConductivity; // Fourier's Law (sort of), the divide by 20 is for 20 ticks per second
+                heat /= 20; // divide by 20 is for 20 ticks per second
+                
+                // Debug.Log("Temperature: " + Environment.Instance.Temperature + " " + _contents.GetTemperature());
+                // Debug.Log("Heating: " + heat + " " + heat / (_volume * _contents.GetVolumetricHeatCapacity()));
+
+                if (Mathf.Abs(heat / (_volume * _contents.GetVolumetricHeatCapacity())) > 0.0000001f && _volume != 0d)
+                {
+                    // Only bother heating if the temperature change will be somewhat significant
+                    _contents.Heat(heat / _volume);
+                    _contents.DisturbEquilibrium();
+                }
+
+                _contents.Tick(out var shouldUpdateFluidMixture);
+
+                if (shouldUpdateFluidMixture)
+                {
+                    // Note: remove Gas from the mixture
+                    var phases = _contents.SeparatePhases(_volume, true);
+                    _contents = phases.LiquidMixture;
+                    _contents.Scale(_volume / phases.LiquidVolume);
+                    // Debug.LogError("Liquid volume: " + phases.LiquidVolume + " " +
+                    //                _contents.RecalculateVolume(phases.LiquidVolume));
+                    _tickGasMixture = phases.GasMixture;
+                }
+            }
+
+            UpdateLiquidContent();
         }
 
         private void ViewContent()
         {
-            UIManager.Instance.ContentPanelController.SetupMixtureToDisplay(_contents, _volumn);
+            UIManager.Instance.ContentPanelController.SetupMixtureToDisplay(this);
             UIManager.Instance.ContentPanelController.OpenPanel();
+        }
+
+        private static void PourAll(IMixtureContainer original, IMixtureContainer target)
+        {
+            var (mixture, volume) = original.GetMixtureAndVolume();
+            target.SetMixtureAndVolume(mixture, volume);
+            original.SetMixtureAndVolume(null, 0);
+        }
+
+        private static void Pour(IMixtureContainer original, IMixtureContainer target)
+        {
+            Debug.Log("Pouring");
         }
     }
 }

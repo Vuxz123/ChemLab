@@ -4,11 +4,10 @@ using com.ethnicthv.chemlab.engine.molecule;
 
 namespace com.ethnicthv.chemlab.engine.api.mixture
 {
-    public interface IMixture
+    public interface IMixture : IReadOnlyMixture
     {
-        public void Tick();
+        public void Tick(out bool shouldUpdateFluidMixture);
         public void RemoveMolecule(Molecule molecule);
-        public void SetMoles(Molecule molecule, float moles);
         public float GetMoles(Molecule molecule);
         public float AddMoles(Molecule molecule, float moles, out bool isMutating);
         IReadOnlyDictionary<Molecule, float> GetMixtureComposition();

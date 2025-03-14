@@ -26,50 +26,25 @@ namespace TestScript
         {
             var mixtures = new Dictionary<Mixture, float>()
             {
-                { Mixture.Pure(Molecules.Water), 0.5f }, { Mixture.Pure(Molecules.SulfuricAcid), 0.5f }
+                { Mixture.Pure(Molecules.Water), 0.5f }, { Mixture.Pure(Molecules.SulfuricAcid), 0.1f }
             };
-            
-            {
-                var formula = Formula.CreateNewCarbonFormula().AddAtom(new Atom(Element.Hydrogen));
-                var start = formula.GetStartAtom();
-                formula.MoveToAtom(start).AddAtom(new Atom(Element.Hydrogen))
-                    .MoveToAtom(start).AddAtom(new Atom(Element.Hydrogen))
-                    .MoveToAtom(start).AddAtom(new Atom(Element.Carbon))
-                    .AddAtom(new Atom(Element.Carbon), Bond.BondType.Triple)
-                    .AddAtom(new Atom(Element.Carbon));
-                start = formula.GetCurrentAtom();
-                formula.MoveToAtom(start).AddAtom(new Atom(Element.Hydrogen))
-                    .MoveToAtom(start).AddAtom(new Atom(Element.Hydrogen))
-                    .MoveToAtom(start).AddAtom(new Atom(Element.Hydrogen));
-
-                _formulas[0] = formula;
-                _formulasNames[0] = "C4H6";
-                
-                mixtures.Add(Mixture.Pure(Molecule.Builder.Create(true).Structure(formula).Build()), 0.5f);
-            }
 
             {
                 _formulasNames[1] = "HCl";
                 
-                mixtures.Add(Mixture.Pure(Molecules.HydrochloricAcid), 0.5f);
+                mixtures.Add(Mixture.Pure(Molecules.HydrochloricAcid), 0.2f);
             }
 
             {
                 _formulasNames[3] = "HCOOH";
                 
-                mixtures.Add(Mixture.Pure(Molecules.AceticAcid), 0.5f);
-            }
-
-            {
-                _formulasNames[4] = "NH4";
-                
-                mixtures.Add(Mixture.Pure(Molecules.Ammonium), 0.5f);
+                mixtures.Add(Mixture.Pure(Molecules.AceticAcid), 0.2f);
             }
             
             _mixture = Mixture.Mix(mixtures);
             
+            bottleBehaviour.SetVolume(1);
             bottleBehaviour.SetMixture(_mixture);
-            bottleBehaviour.SetVolumn(1);
         }
     }
 }

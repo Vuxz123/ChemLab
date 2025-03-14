@@ -162,6 +162,16 @@ namespace com.ethnicthv.chemlab.client.core.game
 
             var colliderGameObject = hit.collider.gameObject;
             
+            if (InstrumentManager.TryGetInstrument(colliderGameObject, out var instrument))
+            {
+                switch (instrument)
+                {
+                    case IHeater heater when heater.IsAttachedToHeatable(out _):
+                    case IHeatable heatable when heatable.IsAttachedToHeater(out _):
+                        return;
+                }
+            }
+            
             if (!InteractableManager.TryGetInteractable(colliderGameObject, out var interactable)) return;
             
             //Note: change layer of the interactable to prevent raycast from hitting it to

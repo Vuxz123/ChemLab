@@ -1,20 +1,36 @@
 ﻿using System;
+using com.ethnicthv.chemlab.client.api.core.game;
 using com.ethnicthv.chemlab.client.api.ui.contents;
+using com.ethnicthv.chemlab.engine;
+using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.api.mixture;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace com.ethnicthv.chemlab.client.ui.contents
 {
-    public class ContentPanelController : MonoBehaviour, IContentPanelController
+    public class ContentPanelController : MonoBehaviour, IContentPanelController, IChemicalTicker
     {
         [SerializeField] private ContentListController contentListController;
         [SerializeField] private TextMeshProUGUI temperatureText;
-        [SerializeField] private TextMeshProUGUI volumnText;
+        [FormerlySerializedAs("volumnText")] [SerializeField] private TextMeshProUGUI volumeText;
 
+        private IMixtureContainer _mixtureContainer;
+        
         private void Start()
         {
             gameObject.SetActive(false);
+        }
+        
+        private void OnEnable()
+        {
+            ChemicalTickerHandler.AddTicker(this);
+        }
+
+        private void OnDisable()
+        {
+            ChemicalTickerHandler.RemoveTicker(this);
         }
 
         public void ClosePanel()
@@ -28,11 +44,16 @@ namespace com.ethnicthv.chemlab.client.ui.contents
             gameObject.transform.SetAsLastSibling();
         }
 
-        public void SetupMixtureToDisplay(IMixture mixture, float volumn)
+        public void SetupMixtureToDisplay(IMixtureContainer mixtureContainer)
         {
-            contentListController.Setup(mixture, volumn);
+            if (mixtureContainer == null) return;
+            var mixture = mixtureContainer.GetMixture();
+            var volume = mixtureContainer.GetVolume();
+            contentListController.Setup(mixture, volume);
             SetTemperatureText(mixture);
-            SetVolumnText(volumn);
+            SetVolumnText(volume);
+            
+            _mixtureContainer = mixtureContainer;
         }
 
         private void SetTemperatureText(IMixture mixture)
@@ -53,12 +74,24 @@ namespace com.ethnicthv.chemlab.client.ui.contents
         {
             if (volumn <= 0)
             {
-                volumnText.text = "Dung tích: rỗng!";
+                volumeText.text = "Dung tích: rỗng!";
                 return;
             }
-            volumnText.text = volumn < 1 ? 
+            volumeText.text = volumn < 1 ? 
                 $"Dung tích: {Mathf.Round(volumn * 1000)} mL" : 
                 $"Dung tích: {Mathf.Round(volumn)} L";
+        }
+
+        public void Tick()
+        {
+            if (_mixtureContainer == null) return;
+            UpdateValues();
+        }
+
+        private void UpdateValues()
+        {
+            SetTemperatureText(_mixtureContainer.GetMixture());
+            SetVolumnText(_mixtureContainer.GetVolume());
         }
     }
 }

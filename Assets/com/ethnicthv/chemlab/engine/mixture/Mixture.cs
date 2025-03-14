@@ -9,7 +9,6 @@ using com.ethnicthv.chemlab.engine.molecule.group;
 using com.ethnicthv.chemlab.engine.reaction;
 using com.ethnicthv.chemlab.engine.util;
 using com.ethnicthv.util;
-using NUnit.Framework;
 using UnityEngine;
 using Util = com.ethnicthv.chemlab.engine.mixture.MixtureUtil;
 
@@ -45,7 +44,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
 
         private bool _isMixtureChecked;
         private Color _color;
-        
+
         private List<Molecule> _molecules; //Note: Cache the Molecules in the Mixture, remove each tick
 
         public static Mixture CreateMixture()
@@ -67,6 +66,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
             var chargeMagnitude = Math.Abs(molecule.GetCharge());
             mixture.AddMoles(molecule, 1.0F, out mixture._isMixtureChecked);
             mixture.AddMoles(otherIon, chargeMagnitude, out mixture._isMixtureChecked);
+
 #pragma warning disable CS0612 // Type or member is obsolete
             mixture.RecalculateVolume(1000);
 #pragma warning restore CS0612 // Type or member is obsolete
@@ -107,7 +107,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
 
             return this;
         }
-        
+
         public float GetTemperature()
         {
             return _temperature;
@@ -128,16 +128,39 @@ namespace com.ethnicthv.chemlab.engine.mixture
             }
         }
 
-        public void Tick()
+        public void Tick(out bool shouldUpdateFluidMixture)
         {
+            shouldUpdateFluidMixture = false;
             _molecules = null;
             if (!_isMixtureChecked)
             {
                 CheckMixture();
                 _isMixtureChecked = true;
             }
-            
-            RunReactions();
+
+            if (!_equilibrium)
+            {
+                RunReactions();
+                shouldUpdateFluidMixture = true;
+            }
+            else
+            {
+                // Debug.Log("Mixture is at equilibrium");
+            }
+
+            // Note: Remove _moleculesToRemove
+            foreach (var molecule in _moleculesToRemove.Keys)
+            {
+                if (molecule.IsSolid())
+                {
+                    _solidMolecules.Remove(molecule);
+                    continue;
+                }
+
+                _mixtureComposition.Remove(molecule);
+            }
+
+            _moleculesToRemove.Clear();
         }
 
         public void RemoveMolecule(Molecule molecule)
@@ -152,7 +175,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
                 throw new Exception(
                     "Set Moles in Mixture must be greater than 0, if you want to remove a molecule, use RemoveMolecule()");
             }
-            
+
             var composition2Mutate = molecule.IsSolid() ? _solidMolecules : _mixtureComposition;
 
             if (!composition2Mutate.ContainsKey(molecule))
@@ -170,8 +193,8 @@ namespace com.ethnicthv.chemlab.engine.mixture
         public float GetMoles(Molecule molecule)
         {
             var t = GetContent();
-            return molecule.IsSolid() ? _solidMolecules.TryGetValue(molecule, out var valueSolid) ? valueSolid : 0 
-                            : t.TryGetValue(molecule, out var value) ? value : 0;
+            return molecule.IsSolid() ? _solidMolecules.TryGetValue(molecule, out var valueSolid) ? valueSolid : 0
+                : t.TryGetValue(molecule, out var value) ? value : 0;
         }
 
         public float AddMoles(Molecule molecule, float moles, out bool isMutating)
@@ -179,7 +202,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
             var isSolid = molecule.IsSolid();
             var t = Util.AddMoles(molecule, moles,
                 _newMolecules, _moleculesToRemove,
-                isSolid ? _solidMolecules :GetContent(), _states, _novelMolecules,
+                isSolid ? _solidMolecules : GetContent(), _states, _novelMolecules,
                 ref _isMixtureChecked);
             isMutating = _isMixtureChecked;
             return t;
@@ -212,7 +235,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
             }
         }
 
-        public Phases SeparatePhases(float initialVolume)
+        public Phases SeparatePhases(float initialVolume, bool doCheck = false)
         {
             Dictionary<Molecule, float> liquidMoles = new();
             Dictionary<Molecule, float> gasMoles = new();
@@ -226,9 +249,13 @@ namespace com.ethnicthv.chemlab.engine.mixture
             foreach (var (molecule, concentration) in _mixtureComposition)
             {
                 var proportionGaseous = _states[molecule];
+
+                //Note: Liquid
                 var molesOfLiquidMolecule = concentration * (1.0F - proportionGaseous) * initialVolume;
                 liquidMoles[molecule] = molesOfLiquidMolecule;
                 newLiquidVolume += molesOfLiquidMolecule / molecule.GetPureConcentration();
+
+                //Note: Gas
                 gasMoles[molecule] = concentration * proportionGaseous * initialVolume;
             }
 
@@ -256,8 +283,13 @@ namespace com.ethnicthv.chemlab.engine.mixture
 
             liquidMixture._temperature = _temperature;
             gasMixture._temperature = _temperature;
-            liquidMixture.CheckMixture();
-            gasMixture.CheckMixture();
+
+            if (doCheck)
+            {
+                liquidMixture.CheckMixture();
+                gasMixture.CheckMixture();
+            }
+
             liquidMixture._equilibrium = _equilibrium;
             gasMixture._equilibrium = _equilibrium;
 
@@ -302,13 +334,29 @@ namespace com.ethnicthv.chemlab.engine.mixture
             foreach (var (molecule, value) in moleculesAndMoles)
             {
                 //resultMixture.internalAddMolecule(molecule, value / totalAmount, false);
+
+                if (molecule.IsSolid())
+                {
+                    MixtureUtil.AddMolecule(molecule, value / totalAmount,
+                        resultMixture._newMolecules,
+                        resultMixture._solidMolecules,
+                        resultMixture._states,
+                        resultMixture._novelMolecules,
+                        out resultMixture._isMixtureChecked);
+                    continue;
+                }
+
                 MixtureUtil.AddMolecule(molecule, value / totalAmount,
                     resultMixture._newMolecules,
                     resultMixture._mixtureComposition,
                     resultMixture._states,
                     resultMixture._novelMolecules,
                     out resultMixture._isMixtureChecked);
-                resultMixture._states[molecule] = 0.0F;
+
+                if (molecule.IsUnsolvableGas())
+                {
+                    resultMixture._states[molecule] = 1.0F;
+                }
             }
 
             foreach (var (reactionResult, value) in reactionResultsAndMoles)
@@ -498,7 +546,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
         }
 
         [Obsolete]
-        public int RecalculateVolume(int initialVolume)
+        public float RecalculateVolume(float initialVolume)
         {
             if (_mixtureComposition.Count == 0)
             {
@@ -527,7 +575,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
                 _reactionResults[entry.Key] = entry.Value * initialVolumeInLiters / newVolumeInLiters;
             }
 
-            return (int)(newVolumeInLiters * 1.0D);
+            return newVolumeInLiters * 1.0F;
         }
 
         public void AddToGroup(MoleculeGroup getGroup, Molecule molecule)
@@ -541,73 +589,91 @@ namespace com.ethnicthv.chemlab.engine.mixture
         private float CalculateReactionRate(IReactingReaction reaction, ReactionContext context)
         {
             var rate = reaction.GetRateConstant(_temperature) / TicksPerSecond;
-            foreach (var molecule in reaction.GetOrders().Keys) {
+            foreach (var molecule in reaction.GetOrders().Keys)
+            {
                 rate *= (float)Math.Pow(GetMoles(molecule), reaction.GetOrders()[molecule]);
             }
+
             //if (reaction.NeedsUV()) rate *= context.UVPower;
             return rate;
         }
 
         private void CheckMixture()
         {
-            Debug.LogWarning("Checking Mixture");
+            // Debug.LogWarning("Checking Mixture");
             foreach (var molecule in _newMolecules)
             {
                 GroupDetectingProgram.Instance.CheckMolecule(molecule, out var groups);
 
                 foreach (var group in groups)
                 {
-                    Debug.Log("Group: " + group);
+                    // Debug.Log("Group: " + group);
                     AddToGroup(group, molecule);
                 }
             }
-            
+
             _newMolecules.Clear();
             _possibleReaction.Clear();
             var newPossibleReactions = new CustomList<IReactingReaction>();
 
             //Note: Add Dynamic Reaction
             ReactionProgram.Instance.CheckForReaction(GetReactionContext(), in newPossibleReactions);
-            
+
             //Note: Add Static Reaction
-            foreach (var reaction in _mixtureComposition.Keys.SelectMany(possibleReactant => possibleReactant.GetReactantReactions()))
+            foreach (var reaction in _mixtureComposition.Keys.SelectMany(possibleReactant =>
+                         possibleReactant.GetReactantReactions()))
             {
                 newPossibleReactions.Push(reaction);
             }
-            
-            Debug.Log("New Possible Reactions: " + newPossibleReactions.GetList().Count);
-            Debug.Log(newPossibleReactions.GetList().Aggregate("", (current, reaction) => current + reaction.GetId() + "\n"));
-            
+
+            // Debug.Log("New Possible Reactions: " + newPossibleReactions.GetList().Count);
+            // Debug.Log(newPossibleReactions.GetList()
+            //     .Aggregate("", (current, reaction) => current + reaction.GetId() + "\n"));
+
             foreach (var possibleReaction in newPossibleReactions.GetList())
             {
-                if (possibleReaction.GetOrders().Keys.Any(necessaryReactantOrCatalyst => GetMoles(necessaryReactantOrCatalyst) == 0)) continue; // Skip Reactions which require a reactant or catalyst which is not present
+                if (possibleReaction.GetOrders().Keys
+                    .Any(necessaryReactantOrCatalyst => GetMoles(necessaryReactantOrCatalyst) == 0))
+                    continue; // Skip Reactions which require a reactant or catalyst which is not present
                 _possibleReaction.AddLast(possibleReaction);
             }
         }
 
         private void RunReactions()
         {
+            // Debug.LogWarning("Running Reactions");
             var context = GetReactionContext();
             _equilibrium = true; // Start by assuming we have reached equilibrium
-            
+
             Dictionary<Molecule, float> oldContents = new(_mixtureComposition);
             
-            Dictionary<IReactingReaction, float> reactionRates = new (); // Rates of all Reactions
-            List<IReactingReaction> orderedReactions = new (); // A list of Reactions in the order of their current rate, fastest first
-            
+            // Debug.LogWarning(oldContents.Keys.Aggregate("" , (current, molecule) => current + molecule.GetFullID() + " Moles: " + oldContents[molecule] + "\n"));
+
+            Dictionary<IReactingReaction, float> reactionRates = new(); // Rates of all Reactions
+            List<IReactingReaction>
+                orderedReactions = new(); // A list of Reactions in the order of their current rate, fastest first
+
             foreach (var possibleReaction in _possibleReaction)
             {
-                if (possibleReaction.GetOrders().Keys.Any(necessaryReactantOrCatalyst => GetMoles(necessaryReactantOrCatalyst) == 0)) continue; // Skip Reactions which require a reactant or catalyst which is not present
-                reactionRates[possibleReaction] = CalculateReactionRate(possibleReaction, context); // Calculate the Reaction data for this sub-tick
-                orderedReactions.Add(possibleReaction); // Add the Reaction to the rate-ordered list, which is currently not sorted
+                if (possibleReaction.GetOrders().Keys
+                    .Any(necessaryReactantOrCatalyst => GetMoles(necessaryReactantOrCatalyst) == 0))
+                    continue; // Skip Reactions which require a reactant or catalyst which is not present
+                reactionRates[possibleReaction] =
+                    CalculateReactionRate(possibleReaction, context); // Calculate the Reaction data for this sub-tick
+                orderedReactions.Add(
+                    possibleReaction); // Add the Reaction to the rate-ordered list, which is currently not sorted
             }
-            
-            orderedReactions.Sort((a, b) => 
+
+            orderedReactions.Sort((a, b) =>
                 reactionRates[b].CompareTo(reactionRates[a])); // Sort the Reactions by their rate, fastest first
-            
+
+            // Note: Do Reaction
             foreach (var r in orderedReactions)
             {
-                var molesOfReaction = reactionRates[r];
+                // Go through each Reaction, fastest first
+                var molesOfReaction =
+                    reactionRates
+                        [r]; // We are reacting over one tick, so moles of Reaction that take place in this time = rate of Reaction in M per sub-tick
 
                 foreach (var reactant in r.GetReactants())
                 {
@@ -615,51 +681,60 @@ namespace com.ethnicthv.chemlab.engine.mixture
                     var reactantConcentration = GetMoles(reactant);
                     if (reactantConcentration < reactantMolarRatio * molesOfReaction)
                     {
-                        molesOfReaction = reactantConcentration / reactantMolarRatio;
+                        // Determine the limiting reagent, if there is one
+                        molesOfReaction = reactantConcentration /
+                                          reactantMolarRatio; // If there is a new limiting reagent, alter the moles of reaction which will take place
                     }
                 }
 
-                if (molesOfReaction > 0.0F)
+                if (molesOfReaction <= 0.0F) // Don't bother going any further if this Reaction won't happen
                 {
-                    _isMixtureChecked |= DoReaction(r, molesOfReaction);
+                    continue;
+                }
+
+                _isMixtureChecked |=
+                    DoReaction(r,
+                        molesOfReaction); // Increment the amount of this Reaction which has occured, add all products and remove all reactants
+            }
+
+            // Check now if we have actually reached equilibrium or if that was a false assumption at the start
+            foreach (var molecule in oldContents.Keys)
+            {
+                if (!Mathf.Approximately(oldContents[molecule], GetMoles(molecule)))
+                {
+                    // If there's something that has changed concentration noticeably in this tick...
+                    _equilibrium = false; // ...we cannot have reached equilibrium
+                    break;
                 }
             }
 
-            foreach (var molecule in oldContents.Keys)
-            {
-                if (Mathf.Approximately(oldContents[molecule], GetMoles(molecule)))
-                {
-                    _equilibrium = false;
-                }
-            }
-            
-            // Note: Remove _moleculesToRemove
-            
-            foreach (var molecule in _moleculesToRemove.Keys)
-            {
-                if (molecule.IsSolid())
-                {
-                    _solidMolecules.Remove(molecule);
-                    continue;
-                }
-                _mixtureComposition.Remove(molecule);
-            }
-            _moleculesToRemove.Clear();
+            // if (_equilibrium)
+            // {
+            //     Debug.LogError("Mixture is at equilibrium");
+            //     foreach (var m in oldContents.Keys)
+            //     {
+            //         Debug.LogError("Molecule: " + m.GetFullID() + " Old Moles: " + oldContents[m] + " New Moles: " +
+            //                        GetMoles(m));
+            //     }
+            // }
         }
 
         private bool DoReaction(IReactingReaction reaction, float molesPerLiter)
         {
+            // Debug.Log("Do Reaction: " + reaction.GetId() + " Moles: " + molesPerLiter);
             var shouldRefreshPossibleReactions = false;
             foreach (var reactant in reaction.GetReactants())
             {
                 AddMoles(reactant, -(molesPerLiter * reaction.GetReactantMolarRatio(reactant)),
                     out shouldRefreshPossibleReactions);
+                // Debug.Log("Reactant: " + reactant.GetFullID() + " Moles: " + GetMoles(reactant));
             }
 
             foreach (var product in reaction.GetProducts())
             {
                 AddMoles(product, molesPerLiter * reaction.GetProductMolarRatio(product),
                     out shouldRefreshPossibleReactions);
+                // Debug.Log("Product: " + product.GetFullID() + " Moles: " + GetMoles(product));
             }
 
             Heat(-reaction.GetEnthalpyChange() * 1000.0F * molesPerLiter);
@@ -727,9 +802,9 @@ namespace com.ethnicthv.chemlab.engine.mixture
         private ReactionContext GetReactionContext()
         {
             //Note: Get full Mixture composition
-            
+
             var contextComposition = new Dictionary<Molecule, float>(_mixtureComposition);
-            
+
             foreach (var (molecule, value) in _solidMolecules)
             {
                 if (contextComposition.ContainsKey(molecule))
@@ -741,7 +816,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
                     contextComposition[molecule] = value;
                 }
             }
-            
+
             return new ReactionContext(_moleculeGroups, contextComposition);
         }
 

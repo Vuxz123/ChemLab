@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using com.ethnicthv.chemlab.engine.molecule;
 using UnityEngine;
 
@@ -14,6 +15,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
             in List<Molecule> novels, 
             ref bool mutatingState)
         {
+            // Debug.Log("Molecule: " + molecule.GetFullID() + " Moles: " + moles );
             //Note: if the molecule is not in the mixture, check if it is a novel molecule
             if (mixtureComposition.ContainsKey(molecule))
                 return NormalAdd(molecule, moles, toRemove, mixtureComposition, ref mutatingState);
@@ -22,13 +24,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
             if (molecule.IsNovel())
             {
                 //Note: check if any molecule in the mixture has the same full id as the novel molecule
-                Molecule found = null;
-                foreach (var m in mixtureComposition.Keys)
-                {
-                    if (!m.IsNovel() || !m.GetFullID().Equals(molecule.GetFullID())) continue;
-                    found = m;
-                    break;
-                }
+                var found = novels.FirstOrDefault(m => m.GetFullID().Equals(molecule.GetFullID()));
 
                 //Note: if a molecule with the same full id is found, add the moles to it
                 if (found != null)
@@ -39,10 +35,9 @@ namespace com.ethnicthv.chemlab.engine.mixture
             }
                 
             //Note: else, add the molecule to the mixture
-            AddMoleculeNonCheck(molecule, moles, newMolecules, mixtureComposition, states, out mutatingState);
+            AddMolecule(molecule, moles, newMolecules, mixtureComposition, states, novels, out mutatingState);
             mutatingState = true;
             return mixtureComposition[molecule];
-
         }
 
         public static void AddMolecule(Molecule molecule, float moles,

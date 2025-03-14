@@ -4,11 +4,13 @@ namespace com.ethnicthv.chemlab.client.api.core.game
 {
     public interface IMixtureContainer
     {
-        public float GetVolumn();
-        public void SetVolumn(float volumn);
+        public float GetVolume();
+        public void SetVolume(float volume);
         public Mixture GetMixture();
         public void SetMixture(Mixture mixture);
-        public void SetMixtureAndVolumn(Mixture mixture, float volumn);
-        public (Mixture mixture, float volumn) GetMixtureAndVolumn();
+        public void SetMixtureAndVolume(Mixture mixture, float volume);
+        public (Mixture mixture, float volume) GetMixtureAndVolume();
+        public bool IsEmpty();
+        public void Clear();
     }
 }

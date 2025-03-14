@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Threading;
 using UnityEngine;
 
 namespace com.ethnicthv.chemlab.engine
@@ -8,32 +6,40 @@ namespace com.ethnicthv.chemlab.engine
     public class ChemicalThread : MonoBehaviour
     {
         private bool _running;
-        private Coroutine _coroutine;
-        
+        private float _executeInterval = 0.05f;
+        private float _interval;
+
+        private void Start()
+        {
+            _executeInterval = 1/20f;
+        }
+
         public void StartTick()
         {
             _running = true;
-            _coroutine = StartCoroutine(TickCoroutine());
         }
 
         public void Stop()
         {
             _running = false;
-            StopCoroutine(_coroutine);
-            _coroutine = null;
         }
         
-        private IEnumerator TickCoroutine()
+        private void Update()
         {
-            while (_running)
-            {
-                try {
-                    PerformChemicalUpdates();
-                } catch (Exception e) {
-                    Debug.LogError("Error in chemical thread: " + e.Message + "\n" + e.StackTrace);
-                    throw;
-                }
-                yield return new WaitForSeconds(0.05f);
+            if (!_running) return;
+            _interval -= Time.deltaTime;
+            if (!(_interval <= 0)) return;
+            Tick();
+            _interval = _executeInterval;
+        }
+        
+        private void Tick()
+        {
+            try {
+                PerformChemicalUpdates();
+            } catch (Exception e) {
+                Debug.LogError("Error in chemical thread: " + e.Message + "\n" + e.StackTrace);
+                throw;
             }
         }
 

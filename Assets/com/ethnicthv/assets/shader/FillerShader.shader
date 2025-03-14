@@ -5,9 +5,8 @@ Shader "Unlit/FillerShader"
         [PerRendererData] _MainTex("Sprite Texture", 2D) = "white" {}
         [PerRendererData] _Color("Tint", Color) = (1,1,1,1)
 
-        _Fill("Clip Angle", Range(0, 1)) = 1
+        _Fill("Fill", Range(0, 1)) = 1
         _FillUpperBound("Fill Upper Bound", Range(0, 1)) = 1
-        _FillLowerBound("Fill Lower Bound", Range(0, 1)) = 0
         _FillThreshold("Fill Threshold", Range(0, 1)) = 0
         
         [MaterialToggle] PixelSnap("Pixel snap", Float) = 0
@@ -109,8 +108,8 @@ Shader "Unlit/FillerShader"
                     float y = lerp(-1, 1, (IN.uv0.y - _SpriteData.y) / _SpriteData.w);
 
                     // Calculate the real fill amount based on the _FillUpperBound and _FillLowerBound
-                    const float real_fill = lerp(_FillLowerBound, _FillUpperBound, _Fill);
-                    const float clipped_real_fill = lerp(_FillLowerBound, _FillUpperBound, _FillThreshold);
+                    const float real_fill = lerp(0, _FillUpperBound, _Fill);
+                    const float clipped_real_fill = lerp(0, _FillUpperBound, _FillThreshold);
                     
                     // Calculate vertical fill based on _ClipAngle (used as a percentage here)
                     const float fill_threshold = lerp(-1, 1, real_fill);
