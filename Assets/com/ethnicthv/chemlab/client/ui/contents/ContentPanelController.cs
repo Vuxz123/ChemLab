@@ -49,7 +49,7 @@ namespace com.ethnicthv.chemlab.client.ui.contents
             if (mixtureContainer == null) return;
             var mixture = mixtureContainer.GetMixture();
             var volume = mixtureContainer.GetVolume();
-            contentListController.Setup(mixture, volume);
+            contentListController.Setup(mixtureContainer);
             SetTemperatureText(mixture);
             SetVolumnText(volume);
             

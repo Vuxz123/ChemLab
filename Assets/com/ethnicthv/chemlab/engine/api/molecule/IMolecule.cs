@@ -34,5 +34,6 @@ namespace com.ethnicthv.chemlab.engine.api.molecule
         public bool IsColorless();
         public string GetSerializedCharge(bool alwaysShowNumber);
         string GetTranslationKey(bool b);
+        bool IsSolid();
     }
 }

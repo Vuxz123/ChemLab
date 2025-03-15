@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
+using com.ethnicthv.chemlab.client.api.core.game;
 using com.ethnicthv.chemlab.client.api.ui.contents;
 using com.ethnicthv.chemlab.engine;
 using com.ethnicthv.chemlab.engine.api;
@@ -17,8 +19,7 @@ namespace com.ethnicthv.chemlab.client.ui.contents
         [SerializeField] private GameObject contentListItemPrefab;
         [SerializeField] private RectTransform itemContainer;
 
-        private IMixture _mixture;
-        private float _volumn;
+        private IMixtureContainer _mixtureContainer;
         private OrderedDictionary _moleculeAmounts;
         
         private Pool<IContentListItemController> _itemPool;
@@ -42,7 +43,7 @@ namespace com.ethnicthv.chemlab.client.ui.contents
 
         private void Reset()
         {
-            _mixture = null;
+            _mixtureContainer = null;
             _moleculeAmounts = null;
             var l = new List<Molecule>(_activeItems.Keys);
             foreach (var key in l)
@@ -53,18 +54,21 @@ namespace com.ethnicthv.chemlab.client.ui.contents
             UpdateHeight(0);
         }
 
-        public void Setup(IMixture mixture, float volumn)
+        public void Setup(IMixtureContainer mixtureContainer)
         {
             Reset();
-            _mixture = mixture;
-            _volumn = volumn;
+            _mixtureContainer = mixtureContainer;
             
-            if (_mixture == null) return;
+            var mixture = mixtureContainer.GetMixture();
+            var volume = mixtureContainer.GetVolume();
+            
+            if (mixture == null) return;
             _moleculeAmounts = new OrderedDictionary();
 
-            foreach (var (molecule, moles) in mixture.GetMixtureComposition())
+            foreach (var molecule in mixture.GetMolecules())
             {
-                _moleculeAmounts.Add(molecule, moles);
+                var moles = mixture.GetMoles(molecule);
+                _moleculeAmounts.Add(molecule, moles * volume);
             }
             
             UpdateList();
@@ -72,24 +76,36 @@ namespace com.ethnicthv.chemlab.client.ui.contents
 
         private void UpdateList()
         {
-            var mixtureComposition = _mixture.GetMixtureComposition();
+            var mixture = _mixtureContainer.GetMixture();
+            var volume = _mixtureContainer.GetVolume();
+            
+            var molecules = mixture.GetMolecules();
             foreach (Molecule molecule in _moleculeAmounts.Keys)
             {
-                if (mixtureComposition.ContainsKey(molecule)) continue;
-                _moleculeAmounts.Remove(molecule);
-                _itemPool.Return(_activeItems[molecule]);
-                _activeItems.Remove(molecule);
+                try
+                {
+                    if (molecules.Contains(molecule)) continue;
+                    _moleculeAmounts.Remove(molecule);
+                    _itemPool.Return(_activeItems[molecule]);
+                    _activeItems.Remove(molecule);
+                }
+                catch (KeyNotFoundException e)
+                {
+                    Debug.LogError("Molecule :" + molecule.GetFullID());
+                    throw;
+                }
             }
 
-            foreach (var (molecule, moles) in mixtureComposition)
+            foreach (var molecule in molecules)
             {
+                var moles = mixture.GetMoles(molecule);
                 if (_moleculeAmounts.Contains(molecule))
                 {
-                    _moleculeAmounts[molecule] = moles;
+                    _moleculeAmounts[molecule] = moles * volume;
                 }
                 else
                 {
-                    _moleculeAmounts.Add(molecule, moles);
+                    _moleculeAmounts.Add(molecule, moles * volume);
                 }
             }
 
@@ -99,12 +115,12 @@ namespace com.ethnicthv.chemlab.client.ui.contents
             {
                 if (_activeItems.TryGetValue(molecule, out var activeItem))
                 {
-                    activeItem.Setup(molecule, (float)_moleculeAmounts[molecule] * _volumn);
+                    activeItem.Setup(molecule, (float)_moleculeAmounts[molecule] * volume);
                 }
                 else
                 {
                     var item = _itemPool.Get();
-                    item.Setup(molecule, (float) _moleculeAmounts[molecule] * _volumn);
+                    item.Setup(molecule, (float) _moleculeAmounts[molecule] * volume);
                     _activeItems.Add(molecule, item);
                 }
                 
@@ -127,7 +143,7 @@ namespace com.ethnicthv.chemlab.client.ui.contents
 
         public void Tick()
         {
-            if (_mixture == null) return;
+            if (_mixtureContainer == null) return;
             UpdateList();
         }
     }

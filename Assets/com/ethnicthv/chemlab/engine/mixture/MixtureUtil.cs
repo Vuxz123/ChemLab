@@ -7,7 +7,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
 {
     public static class MixtureUtil
     {
-        public static float AddMoles(Molecule molecule, float moles,
+        public static float AddMoles(Molecule molecule, float moles, float temperature,
             in Queue<Molecule> newMolecules,
             in Dictionary<Molecule, int> toRemove, 
             in Dictionary<Molecule, float> mixtureComposition, 
@@ -35,12 +35,12 @@ namespace com.ethnicthv.chemlab.engine.mixture
             }
                 
             //Note: else, add the molecule to the mixture
-            AddMolecule(molecule, moles, newMolecules, mixtureComposition, states, novels, out mutatingState);
+            AddMolecule(molecule, moles, temperature, newMolecules, mixtureComposition, states, novels, out mutatingState);
             mutatingState = true;
             return mixtureComposition[molecule];
         }
 
-        public static void AddMolecule(Molecule molecule, float moles,
+        public static void AddMolecule(Molecule molecule, float moles, float temperature,
             in Queue<Molecule> newMolecules,
             in Dictionary<Molecule, float> mixtureComposition,
             in Dictionary<Molecule, float> states,
@@ -48,25 +48,25 @@ namespace com.ethnicthv.chemlab.engine.mixture
             out bool mutatingState)
         {
             if (molecule.IsNovel()) novels.Add(molecule);
-            AddMoleculeNonCheck(molecule, moles, newMolecules, mixtureComposition, states, out mutatingState);
+            AddMoleculeNonCheck(molecule, moles, temperature, newMolecules, mixtureComposition, states, out mutatingState);
         }
         
         public static void RemoveMolecule(Molecule molecule, 
             in Dictionary<Molecule, int> toRemove, 
             out bool mutatingState)
         {
-            toRemove.Add(molecule, 10);
+            toRemove.TryAdd(molecule, 10);
             mutatingState = true;
         }
         
-        private static void AddMoleculeNonCheck(Molecule molecule, float moles,
+        private static void AddMoleculeNonCheck(Molecule molecule, float moles, float temperature,
             in Queue<Molecule> newMolecules,
             in Dictionary<Molecule, float> mixtureComposition, 
             in Dictionary<Molecule, float> states,
             out bool mutatingState)
         {
             mixtureComposition[molecule] = moles;
-            states[molecule] = 0.0f;
+            states[molecule] = molecule.GetBoilingPoint() < temperature ? 1 : 0;
             newMolecules.Enqueue(molecule);
             mutatingState = true;
         }
@@ -78,14 +78,14 @@ namespace com.ethnicthv.chemlab.engine.mixture
         {
             mixtureComposition[molecule] = Mathf.Max(0, mixtureComposition[molecule] + moles);
             
-            if (mixtureComposition[molecule] > 0)
+            if (Mathf.Approximately(mixtureComposition[molecule], 0) || mixtureComposition[molecule] < 0)
             {
-                toRemove.Remove(molecule);
+                RemoveMolecule(molecule, toRemove, out mutatingState);
+                mutatingState = true;
                 return mixtureComposition[molecule];
             }
             
-            RemoveMolecule(molecule, toRemove, out mutatingState);
-            mutatingState = true;
+            toRemove.Remove(molecule);
             return mixtureComposition[molecule];
         }
     }

@@ -5,7 +5,6 @@ using com.ethnicthv.chemlab.client.core.game;
 using com.ethnicthv.chemlab.client.game.util;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace com.ethnicthv.chemlab.client.game
 {
@@ -17,7 +16,7 @@ namespace com.ethnicthv.chemlab.client.game
         
         private bool _isOn;
         private HeatMode _heatMode = HeatMode.Heat;
-        private float _heatPower = 0;
+        private float _heatPower;
         
         private IHeatable _heatable;
         
@@ -165,7 +164,7 @@ namespace com.ethnicthv.chemlab.client.game
             SetMode(_heatMode == HeatMode.Heat ? HeatMode.SuperHeat : HeatMode.Heat);
         }
 
-        public enum HeatMode 
+        private enum HeatMode 
         {
             Heat,
             SuperHeat

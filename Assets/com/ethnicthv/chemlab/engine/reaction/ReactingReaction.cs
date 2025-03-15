@@ -93,17 +93,24 @@ namespace com.ethnicthv.chemlab.engine.reaction
 
         public bool IsConsumedSolid()
         {
-            GetSolidReactants();
-            return _solids.Count > 0;
+            GetSolidReactantsAndCatalysts();
+            return _solids.Any(molecule => _reactants.ContainsKey(molecule));
+        }
+
+        public bool IsMoleculeCatalyst(Molecule molecule)
+        {
+            return _orders.ContainsKey(molecule) && !_reactants.ContainsKey(molecule) && !_products.ContainsKey(molecule);
         }
 
         public IReadOnlyList<Molecule> GetSolidReactants()
         {
-            if (_solids != null)
-            {
-                return _solids;
-            }
-            return _solids = _reactants.Keys.Where(molecule => molecule.IsSolid()).ToList();
+            GetSolidReactantsAndCatalysts();
+            return _solids.Where(molecule => _reactants.ContainsKey(molecule)).ToList();
+        }
+
+        public IReadOnlyList<Molecule> GetSolidReactantsAndCatalysts()
+        {
+            return _solids ??= new List<Molecule>(_orders.Keys);
         }
 
         public float GetRateConstant(float temperature)

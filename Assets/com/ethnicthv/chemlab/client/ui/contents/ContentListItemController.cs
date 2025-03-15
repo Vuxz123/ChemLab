@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using com.ethnicthv.chemlab.client.api.ui.contents;
+using com.ethnicthv.chemlab.client.core.game;
 using com.ethnicthv.chemlab.engine.api.molecule;
 using DG.Tweening;
 using TMPro;
@@ -32,7 +33,7 @@ namespace com.ethnicthv.chemlab.client.ui.contents
             _molecule = molecule;
             gameObject.SetActive(true);
             gameObject.transform.SetAsLastSibling();
-            moleculeNameText.text = molecule.GetTranslationKey(false);
+            moleculeNameText.text = (molecule.IsSolid() ? "(S) " : "") + Translator.Instance.Translate(molecule.GetTranslationKey(false));
             molesText.text = moles.ToString(CultureInfo.InvariantCulture);
         }
 

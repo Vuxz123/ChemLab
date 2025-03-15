@@ -15,7 +15,9 @@ namespace com.ethnicthv.chemlab.engine.api.reaction
         int GetProductMolarRatio(Molecule product);
         float GetEnthalpyChange();
         bool IsConsumedSolid();
+        bool IsMoleculeCatalyst(Molecule molecule);
         IReadOnlyList<Molecule> GetSolidReactants();
+        IReadOnlyList<Molecule> GetSolidReactantsAndCatalysts();
         Dictionary<Molecule, int> GetOrders();
         float GetRateConstant(float temperature);
         string GetId();

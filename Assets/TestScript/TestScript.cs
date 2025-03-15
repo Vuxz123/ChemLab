@@ -45,6 +45,8 @@ namespace TestScript
             
             bottleBehaviour.SetVolume(1);
             bottleBehaviour.SetMixture(_mixture);
+            bottleBehaviour.AddSolidMolecule(Molecules.Sodium, 0.2f);
+            bottleBehaviour.AddSolidMolecule(Molecules.Copper, 0.2f);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using com.ethnicthv.chemlab.client.api.core.game;
 using com.ethnicthv.chemlab.client.chemistry;
 using com.ethnicthv.chemlab.client.core.game;
@@ -8,6 +9,7 @@ using com.ethnicthv.chemlab.client.ui;
 using com.ethnicthv.chemlab.engine;
 using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.mixture;
+using com.ethnicthv.chemlab.engine.molecule;
 using com.ethnicthv.util.pool;
 using UnityEngine;
 using Environment = com.ethnicthv.chemlab.client.core.game.Environment;
@@ -15,7 +17,7 @@ using Environment = com.ethnicthv.chemlab.client.core.game.Environment;
 namespace com.ethnicthv.chemlab.client.game
 {
     public class BottleBehaviour : MonoBehaviour, IInstrument, IInteractable, IMixtureContainer, IChemicalTicker,
-        IHeatable
+        IHeatable, ISolidContainer
     {
         // The thermal conductance (in watts per kelvin) of the area of this Vat.
         [SerializeField] private float heatConductivity = 1000f;
@@ -48,7 +50,6 @@ namespace com.ethnicthv.chemlab.client.game
         {
             InstrumentManager.AddInstrument(gameObject, this);
             InteractableManager.RegisterInteractable(gameObject, this);
-            MixtureContainerManager.RegisterMixtureContainer(gameObject, this);
             ChemicalTickerHandler.AddTicker(this);
         }
 
@@ -56,7 +57,6 @@ namespace com.ethnicthv.chemlab.client.game
         {
             InstrumentManager.RemoveInstrument(gameObject);
             InteractableManager.UnregisterInteractable(gameObject);
-            MixtureContainerManager.UnregisterMixtureContainer(gameObject);
             ChemicalTickerHandler.RemoveTicker(this);
         }
 
@@ -188,26 +188,22 @@ namespace com.ethnicthv.chemlab.client.game
         public List<(string name, Action onClick)> GetDropOptions(GameObject other)
         {
             if (other == null) return null;
+
+            if (!InstrumentManager.TryGetInstrument(other, out var otherInstrument)) return null;
             
-            if (InstrumentManager.TryGetInstrument(other, out var otherInstrument))
+            var options = new List<(string name, Action onClick)>();
+            
+            switch (otherInstrument)
             {
-                if (otherInstrument is IHeater heater)
-                {
+                case IHeater heater:
                     Debug.Log("Dropped on heater");
-                    return new List<(string name, Action onClick)>()
-                    {
-                        ("Attach to heater", () => HeatingUtil.AttachHeater(this, heater))
-                    };
-                }
+                    options.Add(("Attach to heater", () => HeatingUtil.AttachHeater(this, heater)));
+                    break;
+                case IMixtureContainer mixtureContainer:
+                    options.Add(("Pour All", () => PourAll(this, mixtureContainer)));
+                    options.Add(("Pour", () => Pour(this, mixtureContainer)));
+                    break;
             }
-            
-            if (!MixtureContainerManager.TryGetMixtureContainer(other, out var mixtureContainer)) return null;
-            
-            var options = new List<(string name, Action onClick)>()
-            {
-                ("Pour All", () => PourAll(this, mixtureContainer)),
-                ("Pour", () => Pour(this, mixtureContainer)),
-            };
 
             return options;
         }
@@ -283,7 +279,20 @@ namespace com.ethnicthv.chemlab.client.game
                     _contents.Scale(_volume / phases.LiquidVolume);
                     // Debug.LogError("Liquid volume: " + phases.LiquidVolume + " " +
                     //                _contents.RecalculateVolume(phases.LiquidVolume));
-                    _tickGasMixture = phases.GasMixture;
+                    if (_tickGasMixture != null)
+                    {
+                        _tickGasMixture = Mixture.Mix(new Dictionary<Mixture, float>
+                        {
+                            {_tickGasMixture, 1f},
+                            {phases.GasMixture, 1f}
+                        });
+                        
+                        _tickGasMixture.Scale(0.5f);
+                    }
+                    else
+                    {
+                        _tickGasMixture = phases.GasMixture;
+                    }
                 }
             }
 
@@ -306,6 +315,58 @@ namespace com.ethnicthv.chemlab.client.game
         private static void Pour(IMixtureContainer original, IMixtureContainer target)
         {
             Debug.Log("Pouring");
+        }
+
+        public void AddSolidMolecule(Molecule solidMolecule, float moles)
+        {
+            if (!solidMolecule.IsSolid())
+            {
+                Debug.LogError("Trying to add non-solid molecule to solid container");
+                return;
+            }
+
+            if (moles <= 0)
+            {
+                Debug.LogError("This is mixture, cannot take out solid molecules");
+                return;
+            }
+            _contents.AddMoles(solidMolecule, moles/_volume, out _);
+        }
+
+        public void RemoveSolidMolecule(Molecule solidMolecule)
+        {
+            Debug.LogError("This is mixture, cannot take out solid molecules");
+        }
+
+        public bool IsSolidEmpty()
+        {
+            return false;
+        }
+
+        public void ClearSolid()
+        {
+            Debug.LogError("This is mixture, cannot take out solid molecules");
+        }
+
+        public bool ContainsSolidMolecule(Molecule solidMolecule)
+        {
+            return _contents.ContainMolecule(solidMolecule);
+        }
+
+        public float GetSolidMoleculeAmount(Molecule solidMolecule)
+        {
+            return _contents.GetMoles(solidMolecule);
+        }
+
+        public bool TryGetSolidMoleculeAmount(Molecule solidMolecule, out float amount)
+        {
+            if (!ContainsSolidMolecule(solidMolecule))
+            {
+                amount = 0;
+                return false;
+            }
+            amount = _contents.GetMoles(solidMolecule);
+            return true;
         }
     }
 }

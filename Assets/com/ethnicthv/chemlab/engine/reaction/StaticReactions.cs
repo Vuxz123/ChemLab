@@ -4,18 +4,41 @@ namespace com.ethnicthv.chemlab.engine.reaction
 {
     public class StaticReactions
     {
-        public static ReactingReaction SodiumDissolution = ReactingReaction.CreateBuilder()
-            .ID("sodium_dissolution")
-            .AddReactant(Molecules.Sodium, 2, 1)
-            .AddReactant(Molecules.Water, 2, 1)
-            .AddProduct(Molecules.SodiumIon, 2)
-            .AddProduct(Molecules.Hydroxide, 2)
-            .AddProduct(Molecules.Hydrogen)
-            .ActivationEnergy(1f)
-            .Build();
+        public static ReactingReaction AcidBaseNeutralization;
+        
+        public static ReactingReaction SodiumDissolution;
+
+        public static ReactingReaction CopperDissolution;
         
         static StaticReactions()
         {
+            AcidBaseNeutralization = ReactingReaction.CreateBuilder()
+                .ID("acid_base_neutralization")
+                .AddReactant(Molecules.Hydroxide, 1, 1)
+                .AddReactant(Molecules.Proton, 1, 1)
+                .AddProduct(Molecules.Water)
+                .Build();
+            
+            SodiumDissolution = ReactingReaction.CreateBuilder()
+                .ID("sodium_dissolution")
+                .AddReactant(Molecules.Sodium, 2, 1)
+                .AddReactant(Molecules.Water, 2, 1)
+                .AddProduct(Molecules.SodiumIon, 2)
+                .AddProduct(Molecules.Hydroxide, 2)
+                .AddProduct(Molecules.Hydrogen)
+                .ActivationEnergy(1f)
+                .Build();
+            
+            CopperDissolution = ReactingReaction.CreateBuilder()
+                .ID("copper_dissolution")
+                .AddReactant(Molecules.Copper, 1, 1)
+                .AddReactant(Molecules.Proton, 2, 1)
+                .AddProduct(Molecules.Copper2Ion, 1)
+                .AddProduct(Molecules.Hydrogen, 2)
+                .ActivationEnergy(1f)
+                .Build();
+            
+            
             ReactingReaction.CreateBuilder().Acid(Molecules.AceticAcid, Molecules.Acetate, 4.76f);
             ReactingReaction.CreateBuilder().Acid(Molecules.Ammonium, Molecules.Ammonia, 9.25f);
             ReactingReaction.CreateBuilder().Acid(Molecules.HydrochloricAcid, Molecules.Chloride, -6.3f);
