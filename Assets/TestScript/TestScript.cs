@@ -16,37 +16,23 @@ namespace TestScript
 {
     public class TestScript : MonoBehaviour
     {
-        private Mixture _mixture;
-        private readonly Formula[] _formulas = new Formula[5];
-        private readonly string[] _formulasNames = new string[5];
 
         public BottleBehaviour bottleBehaviour; 
+        public SolidHolderBehaviour solidHolderBehaviour;
 
         private void Start()
         {
             var mixtures = new Dictionary<Mixture, float>()
             {
-                { Mixture.Pure(Molecules.Water), 0.5f }, { Mixture.Pure(Molecules.SulfuricAcid), 0.1f }
+                { Mixture.Pure(Molecules.Water), 0.9f }, 
+                { Mixture.Pure(Molecules.SulfuricAcid), 0.1f }
             };
 
-            {
-                _formulasNames[1] = "HCl";
-                
-                mixtures.Add(Mixture.Pure(Molecules.HydrochloricAcid), 0.2f);
-            }
-
-            {
-                _formulasNames[3] = "HCOOH";
-                
-                mixtures.Add(Mixture.Pure(Molecules.AceticAcid), 0.2f);
-            }
+            var (mixture, volume) = Mixture.Mix(mixtures);
             
-            _mixture = Mixture.Mix(mixtures);
-            
-            bottleBehaviour.SetVolume(1);
-            bottleBehaviour.SetMixture(_mixture);
-            bottleBehaviour.AddSolidMolecule(Molecules.Sodium, 0.2f);
-            bottleBehaviour.AddSolidMolecule(Molecules.Copper, 0.2f);
+            bottleBehaviour.SetVolume(volume);
+            bottleBehaviour.SetMixture(mixture);
+            solidHolderBehaviour.AddSolidMolecule(Molecules.Copper, 0.2f);
         }
     }
 }

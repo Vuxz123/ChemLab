@@ -26,9 +26,37 @@ namespace com.ethnicthv.chemlab.client.ui
         [SerializeField] private OptionsPanelController optionsPanelController;
         [SerializeField] private ContentPanelController contentPanelController;
         
+        [Space(10)]
+        [SerializeField] private Transform hoverPanelContainer;
+        
+        private GameObject _currentHoverPanel;
+        
         private void Awake()
         {
             Instance = this;
+        }
+        
+        public bool IsHoverPanelOpen()
+        {
+            return _currentHoverPanel != null;
+        }
+        
+        public GameObject OpenHoverPanel(GameObject hoverPanelPrefab)
+        {
+            if (_currentHoverPanel != null)
+            {
+                CloseHoverPanel();
+            }
+            
+            _currentHoverPanel = Instantiate(hoverPanelPrefab, hoverPanelContainer);
+            return _currentHoverPanel;
+        }
+        
+        public void CloseHoverPanel()
+        {
+            if (_currentHoverPanel == null) return;
+            Destroy(_currentHoverPanel);
+            _currentHoverPanel = null;
         }
     }
 }

@@ -55,6 +55,15 @@ namespace com.ethnicthv.assets.input
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MouseMove"",
+                    ""type"": ""Value"",
+                    ""id"": ""caa49465-dee4-4182-81f4-15b3a157722b"",
+                    ""expectedControlType"": ""Delta"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -90,6 +99,17 @@ namespace com.ethnicthv.assets.input
                     ""action"": ""Options"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ed56f0a7-b1d5-4013-b404-e7734a2bac22"",
+                    ""path"": ""<Mouse>/delta"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MouseMove"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -101,6 +121,7 @@ namespace com.ethnicthv.assets.input
             m_GameEnvironment_Interact = m_GameEnvironment.FindAction("Interact", throwIfNotFound: true);
             m_GameEnvironment_Hold = m_GameEnvironment.FindAction("Hold", throwIfNotFound: true);
             m_GameEnvironment_Options = m_GameEnvironment.FindAction("Options", throwIfNotFound: true);
+            m_GameEnvironment_MouseMove = m_GameEnvironment.FindAction("MouseMove", throwIfNotFound: true);
         }
 
         ~@GameInteract()
@@ -170,6 +191,7 @@ namespace com.ethnicthv.assets.input
         private readonly InputAction m_GameEnvironment_Interact;
         private readonly InputAction m_GameEnvironment_Hold;
         private readonly InputAction m_GameEnvironment_Options;
+        private readonly InputAction m_GameEnvironment_MouseMove;
         public struct GameEnvironmentActions
         {
             private @GameInteract m_Wrapper;
@@ -177,6 +199,7 @@ namespace com.ethnicthv.assets.input
             public InputAction @Interact => m_Wrapper.m_GameEnvironment_Interact;
             public InputAction @Hold => m_Wrapper.m_GameEnvironment_Hold;
             public InputAction @Options => m_Wrapper.m_GameEnvironment_Options;
+            public InputAction @MouseMove => m_Wrapper.m_GameEnvironment_MouseMove;
             public InputActionMap Get() { return m_Wrapper.m_GameEnvironment; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -195,6 +218,9 @@ namespace com.ethnicthv.assets.input
                 @Options.started += instance.OnOptions;
                 @Options.performed += instance.OnOptions;
                 @Options.canceled += instance.OnOptions;
+                @MouseMove.started += instance.OnMouseMove;
+                @MouseMove.performed += instance.OnMouseMove;
+                @MouseMove.canceled += instance.OnMouseMove;
             }
 
             private void UnregisterCallbacks(IGameEnvironmentActions instance)
@@ -208,6 +234,9 @@ namespace com.ethnicthv.assets.input
                 @Options.started -= instance.OnOptions;
                 @Options.performed -= instance.OnOptions;
                 @Options.canceled -= instance.OnOptions;
+                @MouseMove.started -= instance.OnMouseMove;
+                @MouseMove.performed -= instance.OnMouseMove;
+                @MouseMove.canceled -= instance.OnMouseMove;
             }
 
             public void RemoveCallbacks(IGameEnvironmentActions instance)
@@ -230,6 +259,7 @@ namespace com.ethnicthv.assets.input
             void OnInteract(InputAction.CallbackContext context);
             void OnHold(InputAction.CallbackContext context);
             void OnOptions(InputAction.CallbackContext context);
+            void OnMouseMove(InputAction.CallbackContext context);
         }
     }
 }

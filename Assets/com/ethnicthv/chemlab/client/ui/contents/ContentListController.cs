@@ -82,18 +82,10 @@ namespace com.ethnicthv.chemlab.client.ui.contents
             var molecules = mixture.GetMolecules();
             foreach (Molecule molecule in _moleculeAmounts.Keys)
             {
-                try
-                {
-                    if (molecules.Contains(molecule)) continue;
-                    _moleculeAmounts.Remove(molecule);
-                    _itemPool.Return(_activeItems[molecule]);
-                    _activeItems.Remove(molecule);
-                }
-                catch (KeyNotFoundException e)
-                {
-                    Debug.LogError("Molecule :" + molecule.GetFullID());
-                    throw;
-                }
+                if (molecules.Contains(molecule)) continue;
+                _moleculeAmounts.Remove(molecule);
+                _itemPool.Return(_activeItems[molecule]);
+                _activeItems.Remove(molecule);
             }
 
             foreach (var molecule in molecules)

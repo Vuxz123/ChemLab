@@ -4,11 +4,11 @@ namespace com.ethnicthv.chemlab.engine.reaction
 {
     public class StaticReactions
     {
-        public static ReactingReaction AcidBaseNeutralization;
+        public static readonly ReactingReaction AcidBaseNeutralization;
         
-        public static ReactingReaction SodiumDissolution;
+        public static readonly ReactingReaction SodiumDissolution;
 
-        public static ReactingReaction CopperDissolution;
+        public static readonly ReactingReaction CopperDissolution;
         
         static StaticReactions()
         {
@@ -17,6 +17,7 @@ namespace com.ethnicthv.chemlab.engine.reaction
                 .AddReactant(Molecules.Hydroxide, 1, 1)
                 .AddReactant(Molecules.Proton, 1, 1)
                 .AddProduct(Molecules.Water)
+                .PreexponentialFactor(500F)
                 .Build();
             
             SodiumDissolution = ReactingReaction.CreateBuilder()
@@ -26,6 +27,7 @@ namespace com.ethnicthv.chemlab.engine.reaction
                 .AddProduct(Molecules.SodiumIon, 2)
                 .AddProduct(Molecules.Hydroxide, 2)
                 .AddProduct(Molecules.Hydrogen)
+                .PreexponentialFactor(1.0F)
                 .ActivationEnergy(1f)
                 .Build();
             
@@ -36,6 +38,7 @@ namespace com.ethnicthv.chemlab.engine.reaction
                 .AddProduct(Molecules.Copper2Ion, 1)
                 .AddProduct(Molecules.Hydrogen, 2)
                 .ActivationEnergy(1f)
+                .PreexponentialFactor(1.0F)
                 .Build();
             
             

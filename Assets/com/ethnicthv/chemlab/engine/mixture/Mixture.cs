@@ -199,11 +199,13 @@ namespace com.ethnicthv.chemlab.engine.mixture
         public float AddMoles(Molecule molecule, float moles, out bool isMutating)
         {
             var isSolid = molecule.IsSolid();
+            
             var t = Util.AddMoles(molecule, moles, _temperature,
                 _newMolecules, _moleculesToRemove,
                 isSolid ? _solidMolecules : GetContent(), _states, _novelMolecules,
                 ref _isMixtureChecked);
             isMutating = _isMixtureChecked;
+            
             if (molecule.GetBoilingPoint() < _temperature)
             {
                 _states[molecule] = 1.0F;
@@ -250,7 +252,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
 
             var liquidMixture = new Mixture();
             var gasMixture = new Mixture();
-
+            
             foreach (var (molecule, concentration) in _mixtureComposition)
             {
                 var proportionGaseous = _states[molecule];
@@ -276,9 +278,12 @@ namespace com.ethnicthv.chemlab.engine.mixture
                 liquidMixture._states[molecule] = 0.0F;
             }
 
+            var emptyGas = true;
+            
             foreach (var (molecule, resultMoles) in gasMoles)
             {
-                if (resultMoles == 0.0F) continue;
+                if (resultMoles < 0.000000001F) continue;
+                emptyGas = false;
                 gasMixture.AddMoles(molecule, resultMoles / newGasVolume, out gasMixture._isMixtureChecked);
                 gasMixture._states[molecule] = 1.0F;
             }
@@ -309,17 +314,23 @@ namespace com.ethnicthv.chemlab.engine.mixture
             liquidMixture._equilibrium = _equilibrium;
             gasMixture._equilibrium = _equilibrium;
 
+            if (emptyGas)
+            {
+                newGasVolume = 0.0F;
+            }
+
             return new Phases(gasMixture, newGasVolume, liquidMixture, newLiquidVolume);
         }
 
-        public static Mixture Mix(Dictionary<Mixture, float> mixtures)
+        public static (Mixture mixture, float amout) Mix(Dictionary<Mixture, float> mixtures)
         {
             switch (mixtures.Count)
             {
                 case 0:
-                    return new Mixture();
+                    return (new Mixture(), 0);
                 case 1:
-                    return mixtures.Keys.GetEnumerator().Current;
+                    var firstKey = mixtures.Keys.GetEnumerator().Current;
+                    return firstKey == null ? (new Mixture(), 0) : (firstKey,  mixtures[firstKey]);
             }
 
             var resultMixture = new Mixture();
@@ -390,7 +401,7 @@ namespace com.ethnicthv.chemlab.engine.mixture
             resultMixture.CheckMixture();
             resultMixture.UpdateColor();
             resultMixture.UpdateNextBoilingPoints();
-            return resultMixture;
+            return (resultMixture, totalAmount);
         }
 
         public void Heat(float energyDensity)

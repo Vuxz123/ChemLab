@@ -46,7 +46,7 @@ namespace com.ethnicthv.chemlab.engine.molecule
         public static readonly Molecule Copper = Builder().ID("copper")
             .Structure(Formula.CreateNewFormula(new Atom(Element.Copper))).Solid().Build();
 
-        public static readonly Molecule Copper2Ion = Builder().ID("copper_ion")
+        public static readonly Molecule Copper2Ion = Builder().ID("copper_II_ion")
             .Structure(Formula.CreateNewFormula(new Atom(Element.Copper, 2))).Density(900.0F).Build();
 
         public static readonly Molecule Hydrogen = Builder().ID("hydrogen")

@@ -15,7 +15,6 @@ namespace com.ethnicthv.chemlab.engine.mixture
             in List<Molecule> novels, 
             ref bool mutatingState)
         {
-            // Debug.Log("Molecule: " + molecule.GetFullID() + " Moles: " + moles );
             //Note: if the molecule is not in the mixture, check if it is a novel molecule
             if (mixtureComposition.ContainsKey(molecule))
                 return NormalAdd(molecule, moles, toRemove, mixtureComposition, ref mutatingState);

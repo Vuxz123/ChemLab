@@ -15,6 +15,7 @@ namespace com.ethnicthv.chemlab.client.core.game
     {
         public static GameRaycastManager Instance { get; private set; }
 
+        [SerializeField] private float hoverMinimumTime = 0.5f;
         [SerializeField] private int skipFixedFrames = 5;
         [SerializeField] private float dragVelocity = 10;
         [SerializeField] private LayerMask draggableLayer;
@@ -24,14 +25,16 @@ namespace com.ethnicthv.chemlab.client.core.game
 
         private GameInteract _gameInteract;
 
-        private bool _isLeftPointerOverGameObject = false;
-        private bool _isRightPointerOverGameObject = false;
+        private bool _isLeftPointerOverGameObject;
+        private bool _isRightPointerOverGameObject;
 
 #if UNITY_EDITOR
         private readonly Queue<Vector3> _debugRaycastHits = new();
 #endif
 
         private int _skipFrames;
+        private GameObject _hitGameObject;
+        private float _hoverInterval;
 
         private void Awake()
         {
@@ -43,6 +46,7 @@ namespace com.ethnicthv.chemlab.client.core.game
             _gameInteract.GameEnvironment.Options.performed += _ => OnRightClick();
             _gameInteract.GameEnvironment.Hold.performed += _ => OnDragStart();
             _gameInteract.GameEnvironment.Hold.canceled += _ => OnDragEnd();
+            _gameInteract.GameEnvironment.MouseMove.performed += _ => OnMouseMove();
 
             _gameInteract.Enable();
         }
@@ -80,6 +84,34 @@ namespace com.ethnicthv.chemlab.client.core.game
             if (!Physics.Raycast(ray, out var hit)) return;
 
             OnRaycastHit.Invoke(hit);
+            
+            if (_hitGameObject != hit.collider.gameObject)
+            {
+                _hitGameObject = hit.collider.gameObject;
+                _hoverInterval = 0;
+            }
+            else
+            {
+                _hoverInterval += Time.fixedDeltaTime;
+            }
+            
+            if (_hoverInterval < hoverMinimumTime) return;
+            
+            if (!InteractableManager.TryGetInteractable(hit.collider.gameObject, out var interactable)) return;
+            
+            //Note: Hover Event
+            interactable.OnHover();
+            
+            //Note: Open Hover Panel
+            var hover = interactable.GetHoverPanel();
+            if (hover.panelObject == null) return;
+            var panel = UIManager.Instance.OpenHoverPanel(hover.panelObject);
+            hover.setupFunction?.Invoke(panel);
+        }
+
+        private void OnMouseMove()
+        {
+            UIManager.Instance.CloseHoverPanel();
         }
 
         private void OnLeftClick()

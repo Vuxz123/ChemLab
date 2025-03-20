@@ -12,6 +12,7 @@ using com.ethnicthv.chemlab.engine.mixture;
 using com.ethnicthv.chemlab.engine.molecule;
 using com.ethnicthv.util.pool;
 using UnityEngine;
+using UnityEngine.VFX;
 using Environment = com.ethnicthv.chemlab.client.core.game.Environment;
 
 namespace com.ethnicthv.chemlab.client.game
@@ -25,11 +26,13 @@ namespace com.ethnicthv.chemlab.client.game
         [SerializeField] private GameObject fillerPrefab;
         [SerializeField] private List<SpriteRenderer> fillers;
         [SerializeField] private Transform fillersParent;
+        [SerializeField] private VisualEffect bubbles;
 
         private float _heatPower;
         private IHeater _heater;
 
         private Mixture _tickGasMixture;
+        private float _tickGasVolume;
         private Mixture _contents;
         private float _volume;
 
@@ -58,6 +61,38 @@ namespace com.ethnicthv.chemlab.client.game
             InstrumentManager.RemoveInstrument(gameObject);
             InteractableManager.UnregisterInteractable(gameObject);
             ChemicalTickerHandler.RemoveTicker(this);
+        }
+
+        private void Start()
+        {
+            ResetLiquidDisplay();
+            UpdateBubble();
+        }
+
+        private void UpdateBubble()
+        {
+            if (_tickGasMixture == null || _tickGasVolume <= 0)
+            {
+                bubbles.Stop();
+                return;
+            }
+            
+            bubbles.Play();
+
+            var color = _tickGasMixture?.GetColor() ?? Color.white;
+            
+            //Note: add some black to the color to make it darker
+            color.r = Mathf.Max(0, color.r - 0.1f);
+            color.g = Mathf.Max(0, color.g - 0.1f);
+            color.b = Mathf.Max(0, color.b - 0.1f);
+            
+            bubbles.SetVector4("Color", color);
+
+            _tickGasVolume -= 0.025f;
+            if (_tickGasVolume <= 0)
+            {
+                _tickGasMixture = null;
+            }
         }
 
         private SpriteRenderer CreateFiller()
@@ -139,7 +174,7 @@ namespace com.ethnicthv.chemlab.client.game
             heater = _heater;
             return heater != null;
         }
-        
+
         public void SetHeater(IHeater heater)
         {
             _heater = heater;
@@ -156,12 +191,12 @@ namespace com.ethnicthv.chemlab.client.game
             {
                 ("View content", ViewContent),
             };
-            
+
             if (IsAttachedToHeater(out var heater))
             {
                 options.Add(("Detach from heater", () => HeatingUtil.DetachHeater(this, heater)));
             }
-            
+
             return options;
         }
 
@@ -169,9 +204,9 @@ namespace com.ethnicthv.chemlab.client.game
         {
         }
 
-        public GameObject GetHoverPanel()
+        public (GameObject panelObject, Action<GameObject> setupFunction) GetHoverPanel()
         {
-            return null;
+            return (null, null);
         }
 
         public Transform GetMainTransform()
@@ -190,9 +225,9 @@ namespace com.ethnicthv.chemlab.client.game
             if (other == null) return null;
 
             if (!InstrumentManager.TryGetInstrument(other, out var otherInstrument)) return null;
-            
+
             var options = new List<(string name, Action onClick)>();
-            
+
             switch (otherInstrument)
             {
                 case IHeater heater:
@@ -258,7 +293,7 @@ namespace com.ethnicthv.chemlab.client.game
                 heat += (Environment.Instance.Temperature - _contents.GetTemperature()) *
                         heatConductivity; // Fourier's Law (sort of), the divide by 20 is for 20 ticks per second
                 heat /= 20; // divide by 20 is for 20 ticks per second
-                
+
                 // Debug.Log("Temperature: " + Environment.Instance.Temperature + " " + _contents.GetTemperature());
                 // Debug.Log("Heating: " + heat + " " + heat / (_volume * _contents.GetVolumetricHeatCapacity()));
 
@@ -276,18 +311,28 @@ namespace com.ethnicthv.chemlab.client.game
                     // Note: remove Gas from the mixture
                     var phases = _contents.SeparatePhases(_volume, true);
                     _contents = phases.LiquidMixture;
-                    _contents.Scale(_volume / phases.LiquidVolume);
+                    _volume = phases.LiquidVolume;
                     // Debug.LogError("Liquid volume: " + phases.LiquidVolume + " " +
                     //                _contents.RecalculateVolume(phases.LiquidVolume));
                     if (_tickGasMixture != null)
                     {
-                        _tickGasMixture = Mixture.Mix(new Dictionary<Mixture, float>
+                        var mixtures = new Dictionary<Mixture, float>
                         {
-                            {_tickGasMixture, 1f},
-                            {phases.GasMixture, 1f}
-                        });
-                        
-                        _tickGasMixture.Scale(0.5f);
+                            { _tickGasMixture, 1f }
+                        };
+
+                        if (phases.GasVolume > 0)
+                        {
+                            mixtures.Add(phases.GasMixture, 1f);
+                        }
+
+                        var (tickGasMixture, newVolume) = Mixture.Mix(mixtures);
+
+                        _tickGasMixture = tickGasMixture;
+
+                        _tickGasVolume = phases.GasVolume;
+
+                        _tickGasMixture.Scale(1/ newVolume);
                     }
                     else
                     {
@@ -297,6 +342,7 @@ namespace com.ethnicthv.chemlab.client.game
             }
 
             UpdateLiquidContent();
+            UpdateBubble();
         }
 
         private void ViewContent()
@@ -330,7 +376,9 @@ namespace com.ethnicthv.chemlab.client.game
                 Debug.LogError("This is mixture, cannot take out solid molecules");
                 return;
             }
-            _contents.AddMoles(solidMolecule, moles/_volume, out _);
+
+            Debug.Log("Adding solid molecule");
+            _contents.AddMoles(solidMolecule, moles / _volume, out _);
         }
 
         public void RemoveSolidMolecule(Molecule solidMolecule)
@@ -365,6 +413,7 @@ namespace com.ethnicthv.chemlab.client.game
                 amount = 0;
                 return false;
             }
+
             amount = _contents.GetMoles(solidMolecule);
             return true;
         }

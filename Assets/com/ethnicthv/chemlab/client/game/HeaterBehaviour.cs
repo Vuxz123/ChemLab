@@ -81,9 +81,9 @@ namespace com.ethnicthv.chemlab.client.game
             Debug.Log("Hovered over heater");
         }
 
-        public GameObject GetHoverPanel()
+        public (GameObject panelObject, Action<GameObject> setupFunction) GetHoverPanel()
         {
-            return null;
+            return (null, null);
         }
 
         public Transform GetMainTransform()

@@ -47,9 +47,9 @@ namespace com.ethnicthv.chemlab.client.game
             Debug.Log("Hovered over solid holder");
         }
 
-        public GameObject GetHoverPanel()
+        public (GameObject panelObject, Action<GameObject> setupFunction) GetHoverPanel()
         {
-            return null;
+            return (null, null);
         }
 
         public Transform GetMainTransform()
@@ -149,8 +149,15 @@ namespace com.ethnicthv.chemlab.client.game
 
         private void UpdateSolid()
         {
-            var molarMass = _solidMolecule.GetMass();
-            _mass = _solidMoles * molarMass;
+            if (_solidMolecule == null)
+            {
+                _mass = 0;
+            }
+            else
+            {
+                var molarMass = _solidMolecule.GetMass();
+                _mass = _solidMoles * molarMass;
+            }
             
             UpdateSolidDisplay();
         }
@@ -167,6 +174,7 @@ namespace com.ethnicthv.chemlab.client.game
 
             solidRenderer.sprite = _solidDisplay.sprite;
             solidRenderer.color = _solidDisplay.color;
+            Debug.Log("Updated solid display");
         }
         
         private void TransferSolid(ISolidContainer other)
@@ -178,7 +186,12 @@ namespace com.ethnicthv.chemlab.client.game
 
         private void AddToMixture(ISolidContainer other)
         {
+            if (other is BottleBehaviour)
+            {
+                Debug.LogWarning("Cannot add solid to bottle");
+            }
             other.AddSolidMolecule(_solidMolecule, _solidMoles);
+            ClearSolid();
         }
     }
 }

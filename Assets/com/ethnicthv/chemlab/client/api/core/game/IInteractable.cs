@@ -12,7 +12,7 @@ namespace com.ethnicthv.chemlab.client.api.core.game
         
         void OnHover();
 
-        GameObject GetHoverPanel();
+        (GameObject panelObject, Action<GameObject> setupFunction) GetHoverPanel();
         
         Transform GetMainTransform();
 
