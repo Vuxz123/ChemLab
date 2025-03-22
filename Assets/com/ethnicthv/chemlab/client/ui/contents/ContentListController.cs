@@ -79,6 +79,8 @@ namespace com.ethnicthv.chemlab.client.ui.contents
             var mixture = _mixtureContainer.GetMixture();
             var volume = _mixtureContainer.GetVolume();
             
+            if (mixture == null) return;
+            
             var molecules = mixture.GetMolecules();
             foreach (Molecule molecule in _moleculeAmounts.Keys)
             {
@@ -135,7 +137,7 @@ namespace com.ethnicthv.chemlab.client.ui.contents
 
         public void Tick()
         {
-            if (_mixtureContainer == null) return;
+            if (_mixtureContainer?.GetMixture() == null) return;
             UpdateList();
         }
     }

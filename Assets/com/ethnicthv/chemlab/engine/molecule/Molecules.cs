@@ -2,6 +2,7 @@
 using com.ethnicthv.chemlab.engine.api.element;
 using com.ethnicthv.chemlab.engine.api.molecule;
 using com.ethnicthv.chemlab.engine.formula;
+using UnityEngine;
 
 namespace com.ethnicthv.chemlab.engine.molecule
 {
@@ -55,6 +56,8 @@ namespace com.ethnicthv.chemlab.engine.molecule
             .UnsolvableGas()
             .Density(70.85f)
             .MolarHeatCapacity(28.84f)
+            .Burnable()
+            .BurnColor(new Color(0.4f, 0.6f, 1.0f), 0.3f)
             .Build();
 
         public static readonly Molecule HydrochloricAcid = Builder().ID("hydrochloric_acid")

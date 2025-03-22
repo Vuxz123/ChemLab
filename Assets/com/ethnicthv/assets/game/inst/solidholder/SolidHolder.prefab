@@ -145,6 +145,7 @@ GameObject:
   - component: {fileID: 1845769871738220156}
   - component: {fileID: 3303274120171020120}
   - component: {fileID: 7064065923324786804}
+  - component: {fileID: 4890671892760558568}
   m_Layer: 8
   m_Name: SolidHolderVisual
   m_TagString: Untagged
@@ -256,3 +257,16 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.58, y: 1.29, z: 0.2}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &4890671892760558568
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9033518138319743269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a39c777cb4a94791ac2f0c0d7086c454, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  storageTexKey: SolidHolder

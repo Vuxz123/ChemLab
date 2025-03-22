@@ -1,7 +1,6 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace com.ethnicthv.chemlab.client.game
+namespace com.ethnicthv.chemlab.client.game.util
 {
     [ExecuteInEditMode]
     public class PopulateAtlasInfo : MonoBehaviour

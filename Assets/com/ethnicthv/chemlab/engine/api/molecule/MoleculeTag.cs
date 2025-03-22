@@ -11,6 +11,7 @@
         AcidRain,
         Smelly,
         Smog,
-        Refrigerant
+        Refrigerant,
+        Burnable
     }
 }

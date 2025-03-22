@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using com.ethnicthv.chemlab.client.api.core;
 using com.ethnicthv.chemlab.client.api.core.game;
 using com.ethnicthv.chemlab.client.core.game;
-using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.molecule;
 using UnityEngine;
 
 namespace com.ethnicthv.chemlab.client.game
 {
-    public class SolidHolderBehaviour : MonoBehaviour, IInstrument, ISolidContainer, IInteractable
+    public class SolidHolderBehaviour : MonoBehaviour, IInstrument, ISolidContainer, IInteractable, IPluggable
     {
         [SerializeField] private SpriteRenderer solidRenderer;
 
@@ -19,6 +18,16 @@ namespace com.ethnicthv.chemlab.client.game
         private float _mass;
         
         private SolidDisplay _solidDisplay;
+
+
+        public List<IInteractablePlugin> Plugins { get; } = new();
+
+        private IPluggable _pluggable => this;
+
+        private void Awake()
+        {
+            _pluggable.TryAddAllPlugins(gameObject);
+        }
 
         private void OnEnable()
         {
@@ -39,7 +48,11 @@ namespace com.ethnicthv.chemlab.client.game
 
         public List<(string name, Action onClick)> GetOptions()
         {
-            return null;
+            var options = new List<(string, Action)>();
+            
+            _pluggable.ForEachPlugin(p => p.OnGetOptions(ref options));
+            
+            return options;
         }
 
         public void OnHover()

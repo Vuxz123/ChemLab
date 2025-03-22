@@ -11,6 +11,7 @@ using com.ethnicthv.chemlab.engine.api;
 using com.ethnicthv.chemlab.engine.mixture;
 using com.ethnicthv.chemlab.engine.molecule;
 using com.ethnicthv.util.pool;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.VFX;
 using Environment = com.ethnicthv.chemlab.client.core.game.Environment;
@@ -18,7 +19,7 @@ using Environment = com.ethnicthv.chemlab.client.core.game.Environment;
 namespace com.ethnicthv.chemlab.client.game
 {
     public class BottleBehaviour : MonoBehaviour, IInstrument, IInteractable, IMixtureContainer, IChemicalTicker,
-        IHeatable, ISolidContainer
+        IHeatable, ISolidContainer, IGasContainer, IPluggable
     {
         // The thermal conductance (in watts per kelvin) of the area of this Vat.
         [SerializeField] private float heatConductivity = 1000f;
@@ -44,9 +45,15 @@ namespace com.ethnicthv.chemlab.client.game
         private static readonly int Fill = Shader.PropertyToID("_Fill");
         private static readonly int FillerUpperBound = Shader.PropertyToID("_FillUpperBound");
 
+
+        public List<IInteractablePlugin> Plugins { get; } = new();
+
+        private IPluggable _pluggable => this;
+
         private void Awake()
         {
             _fillerPool = new GameObjectPool<SpriteRenderer>(CreateFiller, ResetFiller);
+            ((IPluggable) this).TryAddAllPlugins(gameObject);
         }
 
         private void OnEnable()
@@ -196,17 +203,31 @@ namespace com.ethnicthv.chemlab.client.game
             {
                 options.Add(("Detach from heater", () => HeatingUtil.DetachHeater(this, heater)));
             }
+            
+            _pluggable.ForEachPlugin(plugin =>
+            {
+                plugin.OnGetOptions(ref options);
+            });
 
             return options;
         }
 
         public void OnHover()
         {
+            _pluggable.ForEachPlugin(plugin =>
+            {
+                plugin.OnHover();
+            });
         }
 
         public (GameObject panelObject, Action<GameObject> setupFunction) GetHoverPanel()
         {
-            return (null, null);
+            (GameObject panelObject, Action<GameObject> setupFunction) result = (null, null);
+            _pluggable.ForEachPlugin(plugin =>
+            {
+                plugin.OnGetHoverPanel(ref result);
+            });
+            return result;
         }
 
         public Transform GetMainTransform()
@@ -218,6 +239,11 @@ namespace com.ethnicthv.chemlab.client.game
         {
             if (other == null) return;
             Debug.Log("Dropped on " + other.name);
+            
+            _pluggable.ForEachPlugin(plugin =>
+            {
+                plugin.OnDrop(other);
+            });
         }
 
         public List<(string name, Action onClick)> GetDropOptions(GameObject other)
@@ -239,7 +265,12 @@ namespace com.ethnicthv.chemlab.client.game
                     options.Add(("Pour", () => Pour(this, mixtureContainer)));
                     break;
             }
-
+            
+            _pluggable.ForEachPlugin(plugin =>
+            {
+                plugin.OnGetDropOptions(other, ref options);
+            });
+            
             return options;
         }
 
@@ -416,6 +447,65 @@ namespace com.ethnicthv.chemlab.client.game
 
             amount = _contents.GetMoles(solidMolecule);
             return true;
+        }
+
+        public Mixture GetGasMixture()
+        {
+            return _tickGasMixture;
+        }
+
+        public void SetGasMixture(Mixture mixture)
+        {
+            _tickGasMixture = mixture;
+        }
+
+        public void AddGasMixture(Mixture mixture, float volume)
+        {
+            if (_tickGasMixture == null)
+            {
+                _tickGasMixture = mixture;
+                _tickGasVolume = volume;
+            }
+            else
+            {
+                var mixtures = new Dictionary<Mixture, float>
+                {
+                    { _tickGasMixture, _tickGasVolume },
+                    { mixture, volume }
+                };
+
+                var (tickGasMixture, newVolume) = Mixture.Mix(mixtures);
+
+                _tickGasMixture = tickGasMixture;
+                _tickGasMixture.Scale(1/newVolume);
+                _tickGasVolume = 1;
+            }
+        }
+
+        public bool TryGetGasMixture(out Mixture mixture)
+        {
+            if (_tickGasMixture == null)
+            {
+                mixture = null;
+                return false;
+            }
+            if (_tickGasVolume <= 0)
+            {
+                mixture = null;
+                return false;
+            }
+            mixture = _tickGasMixture;
+            return true;
+        }
+
+        public bool HasGasMixture()
+        {
+            return _tickGasMixture != null && _tickGasVolume > 0;
+        }
+
+        public float GetGasVolume()
+        {
+            return _tickGasVolume;
         }
     }
 }

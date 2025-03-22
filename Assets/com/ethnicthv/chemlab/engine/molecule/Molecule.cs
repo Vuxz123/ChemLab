@@ -56,6 +56,10 @@ namespace com.ethnicthv.chemlab.engine.molecule
         private float _molarHeatCapacity;
         private float _latentHeat;
         private int _color;
+        private Color _burnColor = Color.red;
+        private float _burnIntensity = 1F;
+        private Color _gasColor = Color.white;
+        private Color _solidColor = Color.white;
 
         private bool _novel;
 
@@ -250,6 +254,11 @@ namespace com.ethnicthv.chemlab.engine.molecule
         {
             return _tags.Contains(MoleculeTag.UnsolvableGas);
         }
+        
+        public bool IsBurnable()
+        {
+            return _tags.Contains(MoleculeTag.Burnable);
+        }
 
         public HashSet<MoleculeTag> GetTags()
         {
@@ -301,6 +310,21 @@ namespace com.ethnicthv.chemlab.engine.molecule
         public int GetColor()
         {
             return _color;
+        }
+        
+        public Color GetBurnColor()
+        {
+            return _burnColor;
+        }
+        
+        public float GetBurnIntensity()
+        {
+            return _burnIntensity;
+        }
+        
+        public Color GetGasColor()
+        {
+            return _gasColor;
         }
 
         public bool IsColorless()
@@ -438,6 +462,25 @@ namespace com.ethnicthv.chemlab.engine.molecule
                 _molecule._color = color;
                 return this;
             }
+            
+            public Builder BurnColor(Color color, float intensity)
+            {
+                _molecule._burnColor = color;
+                _molecule._burnIntensity = intensity;
+                return this;
+            }
+            
+            public Builder GasColor(Color color)
+            {
+                _molecule._gasColor = color;
+                return this;
+            }
+            
+            public Builder SolidColor(Color color)
+            {
+                _molecule._solidColor = color;
+                return this;
+            }
 
             public Builder Hypothetical()
             {
@@ -452,6 +495,11 @@ namespace com.ethnicthv.chemlab.engine.molecule
             public Builder UnsolvableGas()
             {
                 return Tag(MoleculeTag.UnsolvableGas);
+            }
+            
+            public Builder Burnable()
+            {
+                return Tag(MoleculeTag.Burnable);
             }
 
             public Builder Tag(params MoleculeTag[] tags)

@@ -164,7 +164,7 @@ namespace com.ethnicthv.chemlab.client.core.game
         private void OpenOptionsPanel(IInteractable interactable)
         {
             var options = interactable.GetOptions();
-            if (options == null) return;
+            if (options == null || options.Count == 0) return;
             
             UIManager.Instance.OptionsPanelController.SetupOptions(options, Mouse.current.position.value);
             UIManager.Instance.OptionsPanelController.OpenPanel();
