@@ -274,6 +274,11 @@ namespace com.ethnicthv.chemlab.client.game
             return options;
         }
 
+        public float GetMaxVolume()
+        {
+            return maxVolume;
+        }
+
         public float GetVolume()
         {
             return _volume;
@@ -391,7 +396,8 @@ namespace com.ethnicthv.chemlab.client.game
 
         private static void Pour(IMixtureContainer original, IMixtureContainer target)
         {
-            Debug.Log("Pouring");
+            UIManager.Instance.Utility.PouringPanelController.SetupPanel(original, target);
+            UIManager.Instance.Utility.PouringPanelController.OpenPanel();
         }
 
         public void AddSolidMolecule(Molecule solidMolecule, float moles)

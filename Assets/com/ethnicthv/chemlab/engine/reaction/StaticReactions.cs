@@ -36,7 +36,7 @@ namespace com.ethnicthv.chemlab.engine.reaction
                 .AddReactant(Molecules.Copper, 1, 1)
                 .AddReactant(Molecules.Proton, 2, 1)
                 .AddProduct(Molecules.Copper2Ion, 1)
-                .AddProduct(Molecules.Hydrogen, 2)
+                .AddProduct(Molecules.Hydrogen, 1)
                 .ActivationEnergy(1f)
                 .PreexponentialFactor(1.0F)
                 .Build();

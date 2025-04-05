@@ -20,6 +20,11 @@ namespace com.ethnicthv.chemlab.engine.reaction
             return Reactions[reactionId];
         }
         
+        public static IEnumerable<IReactingReaction> GetAllReactions()
+        {
+            return new List<IReactingReaction>(Reactions.Values.ToList());
+        }
+        
         public static ReactionBuilder CreateBuilder()
         {
             return new ReactionBuilder();

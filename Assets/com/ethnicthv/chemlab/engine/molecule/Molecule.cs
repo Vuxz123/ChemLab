@@ -8,14 +8,16 @@ using com.ethnicthv.chemlab.engine.api.error.molecule;
 using com.ethnicthv.chemlab.engine.api.molecule;
 using com.ethnicthv.chemlab.engine.api.molecule.formula;
 using com.ethnicthv.chemlab.engine.api.molecule.group;
-using com.ethnicthv.chemlab.engine.formula;
 using com.ethnicthv.chemlab.engine.molecule.group;
 using com.ethnicthv.chemlab.engine.reaction;
+using Unity.Serialization.Json;
+using Unity.VisualScripting;
 using UnityEngine;
+using Formula = com.ethnicthv.chemlab.engine.formula.Formula;
 
 namespace com.ethnicthv.chemlab.engine.molecule
 {
-    public class Molecule : IMutableMolecule
+    public class Molecule : IMutableMolecule, IJsonAdapter<Molecule>
     {
         private static readonly Dictionary<string, Molecule> MoleculeRegistry = new();
         
@@ -35,6 +37,11 @@ namespace com.ethnicthv.chemlab.engine.molecule
             }
             if (!"NO_MOLECULE".Equals(id)) Debug.LogWarning("Could not find Molecule '"+id+"'."); // The 'NO_MOLECULE' is just to stop false warnings due to the Chemical Poison mob effect
             return null;
+        }
+        
+        public static IReadOnlyList<Molecule> GetAllMolecules()
+        {
+            return MoleculeRegistry.Values.ToList();
         }
         
         private Formula _formula;
@@ -62,6 +69,43 @@ namespace com.ethnicthv.chemlab.engine.molecule
         private Color _solidColor = Color.white;
 
         private bool _novel;
+
+        public void Serialize(in JsonSerializationContext<Molecule> context, Molecule value)
+        {
+            context.Writer.WriteBeginObject();
+            context.Writer.WriteKeyValue("id", value._id);
+            context.Writer.WriteKeyValue("translationKey", value.GetTranslationKey(false));
+            context.Writer.WriteKeyValue("formula", value.GetFrownsCode());
+            context.Writer.WriteKey("tags");
+            context.Writer.WriteBeginArray();
+            foreach (var tag in value._tags)
+            {
+                context.Writer.WriteValue(tag.ToString());
+            }
+            context.Writer.WriteEndArray();
+            context.Writer.WriteKeyValue("charge", value.GetCharge());
+            context.Writer.WriteKeyValue("mass", value.GetMass());
+            context.Writer.WriteKeyValue("density", value.GetDensity());
+            context.Writer.WriteKeyValue("boilingPoint", value.GetBoilingPoint());
+            context.Writer.WriteKeyValue("dipoleMoment", value.GetDipoleMoment());
+            context.Writer.WriteKeyValue("molarHeatCapacity", value.GetMolarHeatCapacity());
+            context.Writer.WriteKeyValue("latentHeat", value.GetLatentHeat());
+            context.Writer.WriteKeyValue("color", value.GetColor());
+            context.Writer.WriteKey("burnColor");
+            context.Writer.WriteValue(value._burnColor.ToHexString());
+            context.Writer.WriteKey("burnIntensity");
+            context.Writer.WriteValue(value._burnIntensity);
+            context.Writer.WriteKey("gasColor");
+            context.Writer.WriteValue(value._gasColor.ToHexString());
+            context.Writer.WriteKey("solidColor");
+            context.Writer.WriteValue(value._solidColor.ToHexString());
+            context.Writer.WriteEndObject();
+        }
+
+        public Molecule Deserialize(in JsonDeserializationContext<Molecule> context)
+        {
+            throw new NotImplementedException();
+        }
 
         private Molecule()
         {
@@ -290,7 +334,7 @@ namespace com.ethnicthv.chemlab.engine.molecule
             return empiricalFormula;
         }
 
-        public string GetSerlializedMolecularFormula(bool subscript)
+        public string GetSerlializedMolecularFormula(bool subscript, bool charge = false)
         {
             var formulaMap = GetMolecularFormula();
             List<Element> elements = new(formulaMap.Keys);
@@ -301,8 +345,16 @@ namespace com.ethnicthv.chemlab.engine.molecule
             {
                 var count = formulaMap[element];
                 var number = count == 1 ? "" : count.ToString();
+                if (subscript)
+                {
+                    number = "<sub>" + number + "</sub>";
+                }
                 formula += ElementProperty.GetElementProperty(element).Symbol + number;
             }
+
+            if (!charge || _charge == 0) return formula;
+            var serializedCharge = GetSerializedCharge(true);
+            formula += subscript ? "<sup>" + serializedCharge + "</sup>" : serializedCharge;
 
             return formula;
         }

@@ -7,7 +7,7 @@ namespace com.ethnicthv.chemlab.engine.api.atom
     {
         public Element GetElement();
         public float GetMass();
-        public int GetMaxConnectivity();
+        public double GetMaxConnectivity();
         public ElementProperty GetProperty();
     }
 }

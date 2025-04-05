@@ -14,6 +14,6 @@ namespace com.ethnicthv.chemlab.engine.api.element
         public float GetMeltingPoint();
         public float GetBoilingPoint();
         public float GetElectronegativity();
-        public IReadOnlyList<int> GetValences();
+        public IReadOnlyList<double> GetValences();
     }
 }

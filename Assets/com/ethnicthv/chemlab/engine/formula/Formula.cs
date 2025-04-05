@@ -282,7 +282,7 @@ namespace com.ethnicthv.chemlab.engine.formula
             var element = atom.GetElement();
             var isCarbon = element == Element.Carbon;
             var hydrogenCount = isCarbon ? 4 - _structure[atom].Count : 0;
-            var availableConnectivity = int.MaxValue;
+            var availableConnectivity = float.MaxValue;
             var neighbors = new List<Atom>();
             var isInFormula = _structure.ContainsKey(atom);
 
@@ -291,7 +291,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                     availableConnectivity, neighbors);
 
             var inRing = _rings != null && _rings.RingAtoms.Contains(atom);
-            availableConnectivity = FormulaHelper.GetAvailableConnections(atom, _structure[atom]);
+            availableConnectivity = (float)FormulaHelper.GetAvailableConnections(atom, _structure[atom]);
             neighbors = _structure[atom].Select(bond => bond.GetDestinationAtom()).ToList();
 
             return new FormulaAtomData(element, true, inRing, isCarbon, hydrogenCount,
@@ -455,8 +455,6 @@ namespace com.ethnicthv.chemlab.engine.formula
             private int _numOfDoubleBond;
             private bool _isFormed;
             
-            
-
             public FormulaRing CloneRing(Formula formula)
             {
                 var ring = new FormulaRing(Size, formula);
@@ -623,7 +621,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                 _isFormed = true;
 
                 Topology = topology;
-                MaxConnections = c;
+                MaxConnections = (int)c;
 
                 return _formula;
             }
@@ -755,7 +753,8 @@ namespace com.ethnicthv.chemlab.engine.formula
             
             var nextAtomBond = Bond.BondType.Single;
 
-            for (var i = 0; i < symbols.Count; ++i)
+            var i = 0;
+            while (i < symbols.Count)
             {
                 if (Regex.IsMatch(symbols[i], ".*\\)"))
                 {
@@ -782,7 +781,7 @@ namespace com.ethnicthv.chemlab.engine.formula
 
                     while (brackets > 0)
                     {
-                        ++i;
+                        i++;
                         var added = false;
 
                         for (var j = 0; j < symbols[i].Length; ++j)
@@ -799,7 +798,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                             }
 
                             if (brackets != 0) continue;
-                            subSymbols.Add(symbols[i].Substring(0, j));
+                            subSymbols.Add(symbols[i][..j]);
                             groupsToAdd.Add(CreateGroupFromString(subSymbols), groupBond);
                             subSymbols = new List<string>();
                             groupBond = FormulaHelper.TrailingBondType(symbols[i]);
@@ -817,11 +816,11 @@ namespace com.ethnicthv.chemlab.engine.formula
                 nextAtomBond = Bond.BondType.Single;
                 switch (symbol[^1])
                 {
-                    case '#':
-                        nextAtomBond = Bond.BondType.Triple;
-                        break;
                     case '=':
                         nextAtomBond = Bond.BondType.Double;
+                        break;
+                    case '#':
+                        nextAtomBond = Bond.BondType.Triple;
                         break;
                     case '~':
                         nextAtomBond = Bond.BondType.Aromatic;
@@ -831,10 +830,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                         break;
                 }
 
-                if (stripBond)
-                {
-                    symbol = symbol[..^1];
-                }
+                if (stripBond) symbol = symbol[..^1];
 
                 // Check for charge
                 var charge = 0.0f;
@@ -875,6 +871,8 @@ namespace com.ethnicthv.chemlab.engine.formula
                 {
                     formula.AddGroup(group, true, groupsToAdd[group]);
                 }
+
+                i++;
             }
 
             return formula;

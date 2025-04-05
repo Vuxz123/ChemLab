@@ -10,7 +10,7 @@ namespace com.ethnicthv.chemlab.engine.api.molecule.formula
         bool InRing,
         bool IsCarbon,
         int HydrogenCount,
-        int AvailableConnectivity,
+        float AvailableConnectivity,
         IReadOnlyList<Atom> Neighbors
     );
 }

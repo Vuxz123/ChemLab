@@ -7,6 +7,7 @@ using com.ethnicthv.chemlab.client.ui.compound;
 using com.ethnicthv.chemlab.client.ui.contents;
 using com.ethnicthv.chemlab.client.ui.element;
 using com.ethnicthv.chemlab.client.ui.options;
+using com.ethnicthv.chemlab.client.ui.utility;
 using UnityEngine;
 
 namespace com.ethnicthv.chemlab.client.ui
@@ -20,7 +21,9 @@ namespace com.ethnicthv.chemlab.client.ui
         public IOptionsPanelController OptionsPanelController => optionsPanelController;
         public IContentPanelController ContentPanelController => contentPanelController;
         
+        public UtilityUIManager Utility => utilityUIManager;
         
+        [SerializeField] private UtilityUIManager utilityUIManager;
         [SerializeField] private CompoundPanelController compoundPanelController; 
         [SerializeField] private ElementPanelManager elementPanelManager;
         [SerializeField] private OptionsPanelController optionsPanelController;

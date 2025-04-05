@@ -37,15 +37,18 @@ namespace com.ethnicthv.chemlab.engine.formula
             mutableStructure[dstAtom].Add(new Bond(dstAtom, srcAtom, bondType));
         }
         
-        public static int GetAvailableConnections(Atom atom, IReadOnlyList<Bond> bonds)
+        public static double GetAvailableConnections(Atom atom, IReadOnlyList<Bond> bonds)
         {
             var connections = atom.GetMaxConnectivity();
-            connections = bonds.Aggregate(connections, (current, bond) => current - (int)bond.GetBondType());
-            connections += (int) atom.FormalCharge;
+            connections = bonds.Aggregate(connections, (current, bond) => current -
+                                                                          (bond.GetBondType() == Bond.BondType.Aromatic
+                                                                              ? 1.5f
+                                                                              : (float) bond.GetBondType()));
+            connections += atom.FormalCharge;
             return connections;
         }
 
-        public static int GetTotalConnections(Atom atom, IReadOnlyList<Bond> bonds)
+        public static double GetTotalConnections(Atom atom, IReadOnlyList<Bond> bonds)
         {
             return atom.GetMaxConnectivity() - GetAvailableConnections(atom, bonds);
         }
@@ -126,8 +129,16 @@ namespace com.ethnicthv.chemlab.engine.formula
         
         public static Branch GetMaximumBranchWithHighestMass(Dictionary<Atom, List<Bond>> structure)
         {
-            var terminalAtoms = structure.Keys.Where(atom => structure[atom].Count == 1).ToList();
-            
+            List<Atom> terminalAtoms = new ();
+            if (structure.Count == 1)
+            {
+                return GetMaximumBranch(structure.Keys.First(), structure);
+            }
+            foreach (var atom in structure.Keys) {
+                if (structure[atom].Count == 1) {
+                    terminalAtoms.Add(atom);
+                }
+            }
             terminalAtoms.Sort((a1, a2) =>
                 GetMaximumBranch(a2, structure).GetMassOfLongestChain()
                     .CompareTo(GetMaximumBranch(a1, structure).GetMassOfLongestChain())
@@ -161,14 +172,10 @@ namespace com.ethnicthv.chemlab.engine.formula
             {
                 var bondsToInclude = new List<Bond>();
                 var includeAtom = !atom.IsNeutralHydrogen();
-                foreach (var bond in value.Where(bond =>
-                             atom.FormalCharge != 0.0 || bond.GetDestinationAtom().FormalCharge != 0.0 ||
-                             !bond.GetDestinationAtom().IsNeutralHydrogen()))
-                {
-                    bondsToInclude.Add(bond);
-                    if (bond.GetDestinationAtom().FormalCharge != 0.0)
-                    {
-                        includeAtom = true;
+                foreach (var bond in value) {
+                    if (atom.FormalCharge != 0 || bond.GetDestinationAtom().FormalCharge != 0 || !bond.GetDestinationAtom().IsNeutralHydrogen()) {
+                        bondsToInclude.Add(bond);
+                        if (bond.GetDestinationAtom().FormalCharge != 0) includeAtom = true; // If we're a hydrogen bonded to a charged Atom, include
                     }
                 }
 
@@ -177,7 +184,6 @@ namespace com.ethnicthv.chemlab.engine.formula
                     newStructure[atom] = bondsToInclude;
                 }
             }
-
             return newStructure;
         }
 

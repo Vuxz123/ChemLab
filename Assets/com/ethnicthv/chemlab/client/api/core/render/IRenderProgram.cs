@@ -7,6 +7,7 @@ namespace com.ethnicthv.chemlab.client.api.core.render
 {
     public interface IRenderProgram
     {
+        void ClearRenderEntity();
         void UnregisterRenderEntity(IFormula getFormula);
         void RegisterRenderEntity(IFormula getFormula, Vector3 zero);
         bool HasAnyRenderEntity();

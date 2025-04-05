@@ -85,7 +85,7 @@ namespace com.ethnicthv.chemlab.client.core.renderer
             _renderProcessor.Clear();
             _isDirty = true;
         }
-        
+
         public void UnregisterRenderEntity(IFormula formula)
         {
             _renderProcessor.RemoveFormula(formula);

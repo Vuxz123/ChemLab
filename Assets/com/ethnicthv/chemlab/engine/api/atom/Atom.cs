@@ -21,7 +21,7 @@ namespace com.ethnicthv.chemlab.engine.api.atom
             return ElementProperty.GetElementProperty(_element);
         }
         
-        public int GetMaxConnectivity()
+        public double GetMaxConnectivity()
         {
             return GetProperty().Valences.Max() ;
         }

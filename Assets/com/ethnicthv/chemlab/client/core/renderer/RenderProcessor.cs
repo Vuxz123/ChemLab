@@ -231,6 +231,7 @@ namespace com.ethnicthv.chemlab.client.core.renderer
                                 _3Bonds.Add(new TripleBondModel(model.Position, rotation, length));
                                 break;
                             case Bond.BondType.Aromatic:
+                                _2Bonds.Add(new DoubleBondModel(model.Position, rotation, length));
                                 break;
                             default:
                                 throw new ArgumentOutOfRangeException();

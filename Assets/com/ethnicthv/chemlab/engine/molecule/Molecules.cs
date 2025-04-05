@@ -51,7 +51,7 @@ namespace com.ethnicthv.chemlab.engine.molecule
             .Structure(Formula.CreateNewFormula(new Atom(Element.Copper, 2))).Density(900.0F).Build();
 
         public static readonly Molecule Hydrogen = Builder().ID("hydrogen")
-            .Structure(Formula.CreateNewFormula(new Atom(Element.Hydrogen)).AddAtom(new Atom(Element.Hydrogen)))
+            .Structure(Formula.Deserialize("linear:HH"))
             .BoilingPointInKelvins(20.271f)
             .UnsolvableGas()
             .Density(70.85f)

@@ -29,7 +29,7 @@ namespace com.ethnicthv.chemlab.engine.api.molecule
         public HashSet<MoleculeTag> GetTags();
         public bool HasTag(MoleculeTag tag);
         public Dictionary<Element, int> GetMolecularFormula();
-        public string GetSerlializedMolecularFormula(bool subscript);
+        public string GetSerlializedMolecularFormula(bool subscript, bool charge = false);
         public int GetColor();
         public bool IsColorless();
         public string GetSerializedCharge(bool alwaysShowNumber);
