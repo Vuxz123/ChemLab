@@ -33,6 +33,8 @@ namespace com.ethnicthv.chemlab.client.game
         {
             InstrumentManager.AddInstrument(gameObject, this);
             InteractableManager.RegisterInteractable(gameObject, this);
+            
+            UpdateSolid();
         }
         
         private void OnDisable()

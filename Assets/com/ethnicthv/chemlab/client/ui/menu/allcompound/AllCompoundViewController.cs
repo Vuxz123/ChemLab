@@ -6,6 +6,7 @@ using com.ethnicthv.chemlab.engine.molecule;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace com.ethnicthv.chemlab.client.ui.menu.allcompound
 {
@@ -30,6 +31,9 @@ namespace com.ethnicthv.chemlab.client.ui.menu.allcompound
         [SerializeField] private GameObject isSolidState;
         [SerializeField] private Transform tagContainer;
         [SerializeField] private GameObject tagPrefab;
+        
+        [Header("Add to Bottle")]
+        [SerializeField] private Button addToBottleButton;
 
         public void SetupView(Molecule molecule)
         {
@@ -70,11 +74,12 @@ namespace com.ethnicthv.chemlab.client.ui.menu.allcompound
             {
                 Destroy(child.gameObject);
             }
-            foreach (var tag in _displayedMolecule.GetTags())
+            foreach (var moleculeTag in _displayedMolecule.GetTags())
             {
                 var tagObject = Instantiate(tagPrefab, tagContainer);
-                var text = tagObject.GetComponent<TextMeshProUGUI>();
-                text.text = tag.ToString();
+                var text = tagObject.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
+                text.text = moleculeTag.ToString();
+                tagObject.SetActive(true);
             }
         }
         
@@ -89,6 +94,12 @@ namespace com.ethnicthv.chemlab.client.ui.menu.allcompound
             var center = (lower + higher) / 2;
             
             cameraBox.transform.position = center;
+        }
+
+        public void AddToBottle()
+        {
+            UIManager.Instance.Utility.AddMoleculePanelController.SetupPanel(_displayedMolecule);
+            UIManager.Instance.Utility.AddMoleculePanelController.OpenPanel();
         }
     }
 }
