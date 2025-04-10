@@ -21,6 +21,11 @@ namespace com.ethnicthv.chemlab.engine.molecule
     {
         private static readonly Dictionary<string, Molecule> MoleculeRegistry = new();
         
+        public static bool IsMolecule(string id)
+        {
+            return !string.IsNullOrEmpty(id) && MoleculeRegistry.ContainsKey(id);
+        }
+        
         public static Molecule GetMolecule(string id) {
             if (string.IsNullOrEmpty(id)) return null;
 

@@ -681,8 +681,7 @@ namespace com.ethnicthv.chemlab.engine.formula
                 var topologyAndFormula = FROWNSstring.Trim().Split(":");
                 if (topologyAndFormula.Length != 2)
                 {
-                    throw new FormulaDeserializationException("Badly formatted FROWNS string '" +
-                                        FROWNSstring + "'. They should be in the format 'topology:chains'.");
+                    throw new FormulaDeserializationException("Invalid FROWNS String: '" + FROWNSstring + "'");
                 }
 
                 var topology = topologyAndFormula[0];

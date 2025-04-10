@@ -47,5 +47,15 @@ namespace com.ethnicthv.chemlab.client.core.game
             //Debug.Log("Translating: " + key);
             return _translationMap.TryGetValue(key, out var value) ? value : key;
         }
+        
+        public bool HasTranslation(string key)
+        {
+            return _translationMap.ContainsKey(key);
+        }
+        
+        public void AddTranslation(string key, string value)
+        {
+            _translationMap[key] = value;
+        }
     }
 }
