@@ -72,6 +72,7 @@ namespace com.ethnicthv.chemlab.client.ui.menu.newcompound
             SetupDisableObject();
             SetupTags();
             OpenView(0);
+            SetDisplayedFormula(null);
 
             formulaInput.onSubmit.AddListener(UpdateDisableStateFormula);
             shcInput.onSubmit.AddListener(arg0 => UpdateDisableStateHeatCapacity(shcDisableIndex, arg0));

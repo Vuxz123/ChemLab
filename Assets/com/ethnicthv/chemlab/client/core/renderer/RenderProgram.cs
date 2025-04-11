@@ -175,7 +175,7 @@ namespace com.ethnicthv.chemlab.client.core.renderer
             _renderProcessor.Recalculate();
             _colorAssigner.Clear();
             _atomRenderData = new NativeArray<AtomRenderData>(_renderProcessor.GetAtomCount(), Allocator.Persistent);
-            _atomRenderDataBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Constant, _atomRenderData.Length, Marshal.SizeOf<AtomRenderData>());
+            _atomRenderDataBuffer = _atomRenderData.Length != 0 ? new GraphicsBuffer(GraphicsBuffer.Target.Constant, _atomRenderData.Length, Marshal.SizeOf<AtomRenderData>()) : null;
             _isDirty = false;
         }
     }
