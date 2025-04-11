@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using com.ethnicthv.chemlab.engine.api.element;
 using TMPro;
-using UnityEditor.Rendering;
 using UnityEngine;
 
 namespace com.ethnicthv.chemlab.client.ui.element
