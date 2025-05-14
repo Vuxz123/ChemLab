@@ -7,13 +7,15 @@ namespace com.ethnicthv.chemlab.client.ui
     {
         public RectTransform mainPanel;
         
-        private Vector2 _pointerOffset;
+        private Vector3 _pointerOffset;
         private RectTransform _canvasRectTransform;
 
         public void OnBeginDrag(PointerEventData eventData)
         {
             var position = mainPanel.position;
             var mousePosition = Input.mousePosition;
+            mousePosition.z = 10.0f; //distance of the plane from the camera
+            mousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
             _pointerOffset = mousePosition - position;
             
             //Note: set mainPanel as LastSibling
@@ -24,12 +26,14 @@ namespace com.ethnicthv.chemlab.client.ui
         {
             if (mainPanel == null) return;
             var mousePosition = Input.mousePosition;
+            mousePosition.z = 10.0f; //distance of the plane from the camera
+            mousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
             var pointerPosition = ClampToWindow(mousePosition);
-            Vector3 position = pointerPosition - _pointerOffset;
+            Vector3 position = mousePosition - _pointerOffset;
             mainPanel.position = position;
         }
         
-        private Vector2 ClampToWindow(Vector3 mousePosition)
+        private Vector3 ClampToWindow(Vector3 mousePosition)
         {
             var rawPointerPosition = mousePosition;
             var localPointerPosition = rawPointerPosition;

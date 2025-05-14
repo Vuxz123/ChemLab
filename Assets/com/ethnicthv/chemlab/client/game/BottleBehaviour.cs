@@ -78,7 +78,7 @@ namespace com.ethnicthv.chemlab.client.game
 
         private void UpdateBubble()
         {
-            if (_tickGasMixture == null || _tickGasVolume <= 0)
+            if (_tickGasMixture == null || _tickGasVolume <= 0 || IsEmpty())
             {
                 bubbles.Stop();
                 return;

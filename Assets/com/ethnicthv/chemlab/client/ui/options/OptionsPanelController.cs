@@ -54,7 +54,10 @@ namespace com.ethnicthv.chemlab.client.ui.options
             _options = options;
             UpdateOptionsList();
             var rectTransform = (RectTransform)transform;
-            rectTransform.position = position;
+            // Note: transform mouse space to canva space (canva is in camera space)
+            var screenPoint = (Vector3) position;
+            screenPoint.z = 10.0f; //distance of the plane from the camera
+            rectTransform.position = Camera.main.ScreenToWorldPoint(screenPoint);
         }
 
         private void UpdateOptionsList()
